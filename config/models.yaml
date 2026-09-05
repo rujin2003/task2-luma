@@ -1,0 +1,56 @@
+# Per-role model routing. Swapping providers, or upgrading one role to a stronger model,
+# is a change to this file and nothing else.
+#
+# !! UNVERIFIED MODEL IDS !!
+# LLM_STRATEGY.md section 1 flags `gemini-3.1-flash` as apparently superseded. Run the
+# models-list curl in that section, record the real ids, context windows and
+# function-calling support there, and then correct the values below. Also confirm the
+# free-tier retention and training terms before any tenant ledger data reaches the API --
+# for a treasury product that is a procurement blocker, not a preference.
+version: 1
+
+defaults:
+  provider: gemini
+  model: gemini-3.7-flash
+  temperature: 0 # determinism first; this is a financial system
+  timeout_s: 30.0
+  max_attempts: 2
+
+# LLM_STRATEGY.md section 4. Enforced per role, logged on AgentRun, asserted in CI so a
+# prompt change that doubles context fails the build.
+budgets:
+  system_prompt: 800
+  context_pack: 600
+  findings_digest: 400
+  tool_results: 1500
+  total_input: 4000
+  output: 500
+
+# Bounded concurrency and rate limiting for the parallel wave (section 5). A free tier
+# will throttle nine concurrent agents; "queued" is an honest status, not a failure.
+executor:
+  max_in_flight: 4
+  requests_per_minute: 15
+  max_retries: 3
+  backoff_base_s: 1.0
+  backoff_jitter_s: 0.5
+
+roles:
+  forecast: {}
+  variance: {}
+  ar_collections: {}
+  ap_optimization: {}
+  supplier_risk: {}
+  dodo_revenue: {}
+  stress_test: {}
+  covenant_explainer: {}
+  cartographer: {}
+
+  # The two roles that carry real risk on a small model (section 6). Mitigations 1 and 2 --
+  # enumerated investigation plans, decomposed conflict resolution -- come first; this
+  # routing is available, and should be measured before it is paid for.
+  commander:
+    model: gemini-3.7-pro
+    max_output_tokens: 700
+  conflict_resolution:
+    model: gemini-3.7-pro

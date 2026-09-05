@@ -1,0 +1,40 @@
+[
+  {
+    "agent": "variance",
+    "default": true,
+    "note": "Golden path: the seeded W09 receipts miss, root-caused to invoice 10482.",
+    "output": {
+      "agent": "variance",
+      "status": "complete",
+      "headline": "Receipts $1.9M below plan, $1.4M of it one delayed enterprise invoice",
+      "detail": "Contoso invoice 10482 slipped past terms after a disputed delivery note. The AP overspend is a deliberate early payment run that captured a 2/10 discount.",
+      "quantum": { "minor_units": -190000000, "currency": "USD" },
+      "confidence": {
+        "basis": "empirical",
+        "rationale": "26-week roll-forward at the W1 horizon",
+        "mape_pct": "2.1",
+        "sample_size": 26,
+        "horizon_weeks": 1
+      },
+      "evidence": [
+        {
+          "reference": "ar_ledger:INV-10482#amount_due",
+          "source": "ar_ledger",
+          "excerpt": "Contoso Ltd, invoice 10482, $1.2M, due 2026-01-20, 41 days past terms"
+        },
+        {
+          "reference": "ap_ledger:run-2026-W09",
+          "source": "ap_ledger",
+          "excerpt": "Payment run 2026-W09 executed two days early to capture a 2/10 discount worth $58K"
+        }
+      ],
+      "risks": [
+        "If the Contoso dispute is not resolved this week the miss repeats in W2"
+      ],
+      "recommended_actions": [],
+      "rejects": [],
+      "requires_followup": false
+    },
+    "usage": { "input_tokens": 1840, "output_tokens": 312 }
+  }
+]

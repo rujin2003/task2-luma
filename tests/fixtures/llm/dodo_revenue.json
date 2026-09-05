@@ -1,0 +1,8 @@
+[
+  {
+    "agent": "dodo_revenue",
+    "default": true,
+    "note": "Failure injection: the Dodo agent times out, so the wave has to degrade rather than throw.",
+    "raises": "timeout"
+  }
+]
