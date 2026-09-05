@@ -1,0 +1,127 @@
+{
+  "as_of": "2026-03-02",
+  "version_id": "fv-2026-W10",
+  "published": false,
+  "weeks": [
+    {
+      "week_index": 1,
+      "week_ending": "2026-03-06",
+      "closing_cash": {
+        "minor_units": 2430000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 2,
+      "week_ending": "2026-03-13",
+      "closing_cash": {
+        "minor_units": 2340000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 3,
+      "week_ending": "2026-03-20",
+      "closing_cash": {
+        "minor_units": 2180000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 4,
+      "week_ending": "2026-03-27",
+      "closing_cash": {
+        "minor_units": 2100000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 5,
+      "week_ending": "2026-04-03",
+      "closing_cash": {
+        "minor_units": 1880000000,
+        "currency": "USD"
+      },
+      "breaches_floor": true
+    },
+    {
+      "week_index": 6,
+      "week_ending": "2026-04-10",
+      "closing_cash": {
+        "minor_units": 1840000000,
+        "currency": "USD"
+      },
+      "breaches_floor": true
+    },
+    {
+      "week_index": 7,
+      "week_ending": "2026-04-17",
+      "closing_cash": {
+        "minor_units": 1920000000,
+        "currency": "USD"
+      },
+      "breaches_floor": true
+    },
+    {
+      "week_index": 8,
+      "week_ending": "2026-04-24",
+      "closing_cash": {
+        "minor_units": 2030000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 9,
+      "week_ending": "2026-05-01",
+      "closing_cash": {
+        "minor_units": 2090000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 10,
+      "week_ending": "2026-05-08",
+      "closing_cash": {
+        "minor_units": 2240000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 11,
+      "week_ending": "2026-05-15",
+      "closing_cash": {
+        "minor_units": 2220000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 12,
+      "week_ending": "2026-05-22",
+      "closing_cash": {
+        "minor_units": 2390000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    },
+    {
+      "week_index": 13,
+      "week_ending": "2026-05-29",
+      "closing_cash": {
+        "minor_units": 2480000000,
+        "currency": "USD"
+      },
+      "breaches_floor": false
+    }
+  ],
+  "references": [
+    "forecast:fv-2026-W10"
+  ]
+}

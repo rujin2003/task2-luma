@@ -1,0 +1,87 @@
+{
+  "as_of": "2026-03-02",
+  "at_risk_total": {
+    "minor_units": 110800000,
+    "currency": "USD"
+  },
+  "recoverable_total": {
+    "minor_units": 59760000,
+    "currency": "USD"
+  },
+  "rows": [
+    {
+      "code": "insufficient_funds",
+      "kind": "soft",
+      "count": 412,
+      "amount": {
+        "minor_units": 62000000,
+        "currency": "USD"
+      },
+      "recoverable_amount": {
+        "minor_units": 37820000,
+        "currency": "USD"
+      },
+      "retry_window_days": 14,
+      "reference": "dodo:decline-2026-W10#insufficient_funds"
+    },
+    {
+      "code": "expired_card",
+      "kind": "soft",
+      "count": 168,
+      "amount": {
+        "minor_units": 24000000,
+        "currency": "USD"
+      },
+      "recoverable_amount": {
+        "minor_units": 15840000,
+        "currency": "USD"
+      },
+      "retry_window_days": 21,
+      "reference": "dodo:decline-2026-W10#expired_card"
+    },
+    {
+      "code": "do_not_honor",
+      "kind": "soft",
+      "count": 96,
+      "amount": {
+        "minor_units": 14800000,
+        "currency": "USD"
+      },
+      "recoverable_amount": {
+        "minor_units": 6100000,
+        "currency": "USD"
+      },
+      "retry_window_days": 7,
+      "reference": "dodo:decline-2026-W10#do_not_honor"
+    },
+    {
+      "code": "stolen_card",
+      "kind": "hard",
+      "count": 21,
+      "amount": {
+        "minor_units": 3200000,
+        "currency": "USD"
+      },
+      "recoverable_amount": {
+        "minor_units": 0,
+        "currency": "USD"
+      },
+      "reference": "dodo:decline-2026-W10#stolen_card"
+    },
+    {
+      "code": "closed_account",
+      "kind": "hard",
+      "count": 44,
+      "amount": {
+        "minor_units": 6800000,
+        "currency": "USD"
+      },
+      "recoverable_amount": {
+        "minor_units": 0,
+        "currency": "USD"
+      },
+      "reference": "dodo:decline-2026-W10#closed_account"
+    }
+  ],
+  "references": []
+}

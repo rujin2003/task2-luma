@@ -1,0 +1,83 @@
+{
+  "as_of": "2026-03-02",
+  "total_deferrable": {
+    "minor_units": 206000000,
+    "currency": "USD"
+  },
+  "rows": [
+    {
+      "supplier": "Acme Components",
+      "document_ref": "BILL-8841",
+      "amount": {
+        "minor_units": 110000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-03-19",
+      "max_delay_days": 21,
+      "payment_class": "trade",
+      "protected": false,
+      "discount_forgone": {
+        "minor_units": 2200000,
+        "currency": "USD"
+      },
+      "reference": "ap_ledger:BILL-8841#due_date"
+    },
+    {
+      "supplier": "Globex Logistics",
+      "document_ref": "BILL-8863",
+      "amount": {
+        "minor_units": 62000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-03-26",
+      "max_delay_days": 30,
+      "payment_class": "trade",
+      "protected": false,
+      "reference": "ap_ledger:BILL-8863#due_date"
+    },
+    {
+      "supplier": "Initech Software",
+      "document_ref": "BILL-8877",
+      "amount": {
+        "minor_units": 34000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-04-02",
+      "max_delay_days": 14,
+      "payment_class": "trade",
+      "protected": false,
+      "discount_forgone": {
+        "minor_units": 680000,
+        "currency": "USD"
+      },
+      "reference": "ap_ledger:BILL-8877#due_date"
+    },
+    {
+      "supplier": "NovaTech Payroll",
+      "document_ref": "PAY-2026-W12",
+      "amount": {
+        "minor_units": 245000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-03-20",
+      "max_delay_days": 0,
+      "payment_class": "payroll",
+      "protected": true,
+      "reference": "ap_ledger:PAY-2026-W12#due_date"
+    },
+    {
+      "supplier": "State Revenue Office",
+      "document_ref": "TAX-2026-Q1",
+      "amount": {
+        "minor_units": 85000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-03-27",
+      "max_delay_days": 0,
+      "payment_class": "tax",
+      "protected": true,
+      "reference": "ap_ledger:TAX-2026-Q1#due_date"
+    }
+  ],
+  "references": []
+}

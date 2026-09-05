@@ -204,7 +204,6 @@ class InvestigationClosed(_Event):
 
 class SkippedAgent(BaseModel):
     """Why an agent was *not* called. A pure-AR incident must not invoke Dodo."""
-
     model_config = ConfigDict(frozen=True)
 
     agent: AgentRole

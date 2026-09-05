@@ -1,0 +1,44 @@
+{
+  "as_of": "2026-03-02",
+  "constraints": [
+    {
+      "constraint_id": "min-cash",
+      "kind": "min_cash",
+      "severity": "hard",
+      "description": "Minimum operating cash across the 13-week horizon",
+      "money_threshold": {
+        "minor_units": 2000000000,
+        "currency": "USD"
+      },
+      "source_ref": "policy:treasury-policy-v4#min_cash"
+    },
+    {
+      "constraint_id": "protected-payroll",
+      "kind": "protected_payment_class",
+      "severity": "hard",
+      "description": "Payroll is never deferrable",
+      "applies_to": "payroll",
+      "source_ref": "policy:treasury-policy-v4#protected_classes"
+    },
+    {
+      "constraint_id": "max-supplier-delay",
+      "kind": "max_supplier_delay",
+      "severity": "soft",
+      "description": "Suppliers are not stretched beyond 30 days past terms",
+      "days_threshold": 30,
+      "source_ref": "policy:treasury-policy-v4#supplier_delay"
+    },
+    {
+      "constraint_id": "max-revolver-util",
+      "kind": "max_revolver_utilization",
+      "severity": "hard",
+      "description": "Revolver utilization stays below the covenant ceiling",
+      "ratio_threshold": "0.65",
+      "source_ref": "debt:covenant-util-2026Q1"
+    }
+  ],
+  "references": [
+    "policy:treasury-policy-v4#min_cash",
+    "policy:treasury-policy-v4#protected_classes"
+  ]
+}

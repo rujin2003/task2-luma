@@ -1,0 +1,134 @@
+{
+  "ar_ledger:INV-10482#amount_due": {
+    "reference": "ar_ledger:INV-10482#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Contoso Ltd, invoice 10482, $1.2M, due 2026-01-20, 41 days past terms",
+    "fields": {
+      "customer": "Contoso Ltd",
+      "amount_due": "1200000.00 USD",
+      "due_date": "2026-01-20",
+      "dispute": "delivery note"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:INV-10482#amount_due"
+    ]
+  },
+  "ar_ledger:aging-2026-W10": {
+    "reference": "ar_ledger:aging-2026-W10",
+    "source": "ar_ledger",
+    "excerpt": "AR aging at 2026-03-02: $8.42M open across 68 invoices",
+    "fields": {
+      "total": "8420000.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:aging-2026-W10"
+    ]
+  },
+  "ar_ledger:curve-2026-W09": {
+    "reference": "ar_ledger:curve-2026-W09",
+    "source": "ar_ledger",
+    "excerpt": "Empirical 30-day collection curve: 72% of open AR settles inside terms",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:curve-2026-W09"
+    ]
+  },
+  "ap_ledger:BILL-8841#due_date": {
+    "reference": "ap_ledger:BILL-8841#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Acme Components, bill 8841, $1.1M, due 2026-03-19, 2/10 net 30",
+    "fields": {
+      "supplier": "Acme Components",
+      "amount": "1100000.00 USD",
+      "discount_forgone": "22000.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:BILL-8841#due_date"
+    ]
+  },
+  "ap_ledger:supplier-acme#risk": {
+    "reference": "ap_ledger:supplier-acme#risk",
+    "source": "ap_ledger",
+    "excerpt": "Acme Components: sole source, 31% of category spend, 3 late payments in 6 months",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:supplier-acme#risk"
+    ]
+  },
+  "ap_ledger:run-2026-W09": {
+    "reference": "ap_ledger:run-2026-W09",
+    "source": "ap_ledger",
+    "excerpt": "Payment run 2026-W09 executed two days early to capture a 2/10 discount worth $58K",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:run-2026-W09"
+    ]
+  },
+  "dodo:decline-2026-W10#soft_rate": {
+    "reference": "dodo:decline-2026-W10#soft_rate",
+    "source": "dodo",
+    "excerpt": "Soft declines 8.4% of the renewal cohort, up 3.1pp week on week; $597.6K recoverable inside documented retry windows",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:decline-2026-W10#soft_rate"
+    ]
+  },
+  "policy:treasury-policy-v4#min_cash": {
+    "reference": "policy:treasury-policy-v4#min_cash",
+    "source": "policy",
+    "excerpt": "TreasuryPolicy v4: minimum operating cash $20.0M, hard constraint",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "policy:treasury-policy-v4#min_cash"
+    ]
+  },
+  "policy:treasury-policy-v4#protected_classes": {
+    "reference": "policy:treasury-policy-v4#protected_classes",
+    "source": "policy",
+    "excerpt": "TreasuryPolicy v4: payroll and statutory tax are protected payment classes",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "policy:treasury-policy-v4#protected_classes"
+    ]
+  },
+  "bank:balance-2026-03-02": {
+    "reference": "bank:balance-2026-03-02",
+    "source": "bank",
+    "excerpt": "Reconciled bank balance at 2026-03-02: $24.8M across four accounts",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "bank:balance-2026-03-02"
+    ]
+  },
+  "forecast:fv-2026-W10": {
+    "reference": "forecast:fv-2026-W10",
+    "source": "forecast",
+    "excerpt": "Forecast version fv-2026-W10, draft, minimum cash $18.4M at W6",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "forecast:fv-2026-W10"
+    ]
+  }
+}

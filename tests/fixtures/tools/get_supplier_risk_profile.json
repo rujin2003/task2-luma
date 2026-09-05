@@ -1,0 +1,30 @@
+{
+  "Acme Components": {
+    "as_of": "2026-03-02",
+    "supplier": "Acme Components",
+    "sole_source": true,
+    "concentration_pct": "31.0",
+    "late_payments_6m": 3,
+    "open_disputes": 1,
+    "contractual_terms_days": 30,
+    "on_credit_hold": false,
+    "notes": "Sole source for the controller board; a further stretch risks allocation.",
+    "references": [
+      "ap_ledger:supplier-acme#risk"
+    ]
+  },
+  "Globex Logistics": {
+    "as_of": "2026-03-02",
+    "supplier": "Globex Logistics",
+    "sole_source": false,
+    "concentration_pct": "8.0",
+    "late_payments_6m": 0,
+    "open_disputes": 0,
+    "contractual_terms_days": 45,
+    "on_credit_hold": false,
+    "notes": "Two qualified alternates; tolerant of 30-day stretches historically.",
+    "references": [
+      "ap_ledger:supplier-globex#risk"
+    ]
+  }
+}
