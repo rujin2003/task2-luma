@@ -55,13 +55,7 @@ export type AgentRole =
   | "cartographer";
 
 export type AgentStatus =
-  | "queued"
-  | "running"
-  | "complete"
-  | "degraded"
-  | "refused"
-  | "timeout"
-  | "failed";
+  "queued" | "running" | "complete" | "degraded" | "refused" | "timeout" | "failed";
 
 export type ActionKind =
   | "collection_call"
@@ -175,14 +169,7 @@ export interface ReplanAttempt {
 }
 
 export type WorklistStatus =
-  | "open"
-  | "queued"
-  | "needs_approval"
-  | "approved"
-  | "rejected"
-  | "executed"
-  | "landed"
-  | "missed";
+  "open" | "queued" | "needs_approval" | "approved" | "rejected" | "executed" | "landed" | "missed";
 
 export interface WorklistItem {
   seq: number;
@@ -225,13 +212,7 @@ export interface Recommendation {
 
 export type ApprovalRole = "analyst" | "treasurer" | "cfo" | "board";
 
-export type ApprovalState =
-  | "draft"
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "blocked"
-  | "expired";
+export type ApprovalState = "draft" | "pending" | "approved" | "rejected" | "blocked" | "expired";
 
 /** The card renders exactly these eight, in this order. It is a contract, not a layout. */
 export const APPROVAL_CARD_FIELDS = [
@@ -274,10 +255,7 @@ export interface ApprovalDecision {
 }
 
 /** Mirrors `Money.__str__` on the backend, then abbreviates for grid density. */
-export function formatMoney(
-  money: Money,
-  { compact = false }: { compact?: boolean } = {},
-): string {
+export function formatMoney(money: Money, { compact = false }: { compact?: boolean } = {}): string {
   const major = money.minor_units / 100;
   if (!compact) {
     return `${major.toLocaleString("en-US", {
