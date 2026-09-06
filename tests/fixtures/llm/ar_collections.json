@@ -75,6 +75,80 @@
   },
   {
     "agent": "ar_collections",
+    "fingerprint": "e7cce8e1d131995d",
+    "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
+    "output": {
+      "agent": "ar_collections",
+      "status": "complete",
+      "headline": "$1.66M expected against $8.42M open; four invoices are worth the call",
+      "detail": "Ranked on the empirical curve rather than on size. Fabrikam and Tailspin are the highest-probability rows; Northwind is a dispute, not a collection call.",
+      "quantum": {
+        "minor_units": 165660000,
+        "currency": "USD"
+      },
+      "confidence": {
+        "basis": "empirical",
+        "rationale": "Probability weights from the tenant's own 30-day collection curve",
+        "mape_pct": "6.4",
+        "sample_size": 68
+      },
+      "evidence": [
+        {
+          "reference": "ar_ledger:INV-10517#amount_due",
+          "source": "ar_ledger",
+          "excerpt": "Fabrikam invoice 10517, 17 days past terms"
+        },
+        {
+          "reference": "ar_ledger:INV-10482#amount_due",
+          "source": "ar_ledger",
+          "excerpt": "Contoso invoice 10482, 41 days past terms"
+        },
+        {
+          "reference": "ar_ledger:aging-2026-W10",
+          "source": "ar_ledger",
+          "excerpt": "AR aging: $8.42M open across 68 invoices"
+        }
+      ],
+      "risks": [
+        "Open AR is not collectible AR; the $6.76M difference is not forecastable"
+      ],
+      "recommended_actions": [
+        {
+          "kind": "collection_call",
+          "rationale": "64% collected on a call inside the 30-day bucket",
+          "counterparty": "Fabrikam Inc",
+          "document_ref": "INV-10517",
+          "amount": {
+            "minor_units": 56320000,
+            "currency": "USD"
+          },
+          "due_by": "2026-03-13",
+          "evidence_refs": [
+            "ar_ledger:INV-10517#amount_due"
+          ]
+        },
+        {
+          "kind": "dispute_resolution",
+          "rationale": "Disputed delivery note; 22% settles without escalation",
+          "counterparty": "Northwind Traders",
+          "document_ref": "INV-10466",
+          "amount": {
+            "minor_units": 14080000,
+            "currency": "USD"
+          },
+          "evidence_refs": [
+            "ar_ledger:INV-10466#amount_due"
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "input_tokens": 818,
+      "output_tokens": 397
+    }
+  },
+  {
+    "agent": "ar_collections",
     "default": true,
     "note": "Default replay for calls without a recorded fingerprint.",
     "output": {
