@@ -2,6 +2,7 @@ import { formatMoney } from "@/lib/contracts";
 import type { ForecastRow, ForecastSnapshot, ForecastWeek } from "@/lib/forecast";
 import { netForWeek } from "@/lib/forecast";
 
+import { Traced } from "./evidence/Traced";
 import { BASIS_CLASS, BASIS_GLYPH, BASIS_LABEL, Panel } from "./primitives";
 import type { CellBasis } from "@/lib/forecast";
 
@@ -44,9 +45,13 @@ function Cell({ row, weekIndex }: { row: ForecastRow; weekIndex: number }) {
 
   return (
     <td className="px-2 py-1.5 text-right font-mono text-xs tabular-nums whitespace-nowrap">
-      <span className={BASIS_CLASS[cell.basis]} title={title}>
-        {formatMoney(signed, { compact: true })}
-      </span>
+      <Traced
+        reference={cell.reference}
+        label={`${row.category}, week ${weekIndex + 1}`}
+        className={BASIS_CLASS[cell.basis]}
+      >
+        <span title={title}>{formatMoney(signed, { compact: true })}</span>
+      </Traced>
       {cell.stale ? (
         <span className="ml-1 text-warning" title="driver is stale" aria-label="stale driver">
           ⚠
@@ -142,14 +147,16 @@ export function ForecastGrid({ snapshot }: { snapshot: ForecastSnapshot }) {
                       : ""
                   }`}
                 >
-                  <span
+                  <Traced
+                    reference={week.reference}
+                    label={`Closing cash, week ${week.index}`}
                     className={
                       week.breaches_floor ? "font-semibold text-critical" : BASIS_CLASS[week.basis]
                     }
                   >
                     {week.breaches_floor ? "✗ " : ""}
                     {formatMoney(week.closing_cash, { compact: true })}
-                  </span>
+                  </Traced>
                 </td>
               ))}
             </tr>
@@ -158,7 +165,8 @@ export function ForecastGrid({ snapshot }: { snapshot: ForecastSnapshot }) {
       </div>
       <p className="border-t border-line px-4 py-2 text-xs text-ink-3">
         ✗ marks a week below the policy floor of {formatMoney(liquidity.floor, { compact: true })}.
-        Outflows are shown negative.
+        Outflows are shown negative. Underlined figures trace to a source row; net movement is
+        computed from the rows above it, so it has no source of its own.
       </p>
     </Panel>
   );

@@ -20,7 +20,8 @@
     "source": "ar_ledger",
     "excerpt": "AR aging at 2026-03-02: $8.42M open across 68 invoices",
     "fields": {
-      "total": "8420000.00 USD"
+      "total": "8420000.00 USD",
+      "derived_from": "ar_ledger:INV-10482#amount_due, ar_ledger:INV-10517#amount_due, ar_ledger:INV-10466#amount_due, ar_ledger:INV-10530#amount_due, ar_ledger:INV-10493#amount_due"
     },
     "resolved": true,
     "as_of": "2026-03-02",
@@ -76,6 +77,64 @@
       "ap_ledger:run-2026-W09"
     ]
   },
+  "payroll:schedule-2026-Q1": {
+    "reference": "payroll:schedule-2026-Q1",
+    "source": "payroll",
+    "excerpt": "Payroll schedule 2026-Q1: fortnightly, $2.40M rising to $2.50M from W11",
+    "fields": {
+      "cadence": "fortnightly",
+      "next_run": "2026-03-06"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "payroll:schedule-2026-Q1"
+    ]
+  },
+  "tax_calendar:2026-Q1": {
+    "reference": "tax_calendar:2026-Q1",
+    "source": "tax_calendar",
+    "excerpt": "Statutory tax calendar 2026-Q1: $850K due 2026-03-27, $900K due 2026-04-24",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "tax_calendar:2026-Q1"
+    ]
+  },
+  "debt:schedule-2026": {
+    "reference": "debt:schedule-2026",
+    "source": "debt",
+    "excerpt": "Debt service schedule: $640K every four weeks against the 2026 term facility",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "debt:schedule-2026"
+    ]
+  },
+  "gl:other-receipts-2026-W10": {
+    "reference": "gl:other-receipts-2026-W10",
+    "source": "gl",
+    "excerpt": "Other receipts run-rate: $180K-$320K per week, trailing 8 weeks",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "gl:other-receipts-2026-W10"
+    ]
+  },
+  "gl:accuracy-note-2026-W10": {
+    "reference": "gl:accuracy-note-2026-W10",
+    "source": "gl",
+    "excerpt": "Forecast accuracy roll-forward published with the W10 close",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "gl:accuracy-note-2026-W10"
+    ]
+  },
   "dodo:decline-2026-W10#soft_rate": {
     "reference": "dodo:decline-2026-W10#soft_rate",
     "source": "dodo",
@@ -124,11 +183,42 @@
     "reference": "forecast:fv-2026-W10",
     "source": "forecast",
     "excerpt": "Forecast version fv-2026-W10, draft, minimum cash $18.4M at W6",
-    "fields": {},
+    "fields": {
+      "derived_from": "bank:balance-2026-03-02, ar_ledger:aging-2026-W10, dodo:settlement-2026-W10, ap_ledger:cadence-2026-W08, policy:treasury-policy-v4#min_cash"
+    },
     "resolved": true,
     "as_of": "2026-03-02",
     "references": [
       "forecast:fv-2026-W10"
+    ]
+  },
+  "dodo:settlement-2026-W10": {
+    "reference": "dodo:settlement-2026-W10",
+    "source": "dodo",
+    "excerpt": "Dodo settlement 2026-W10: $1.90M received against $3.01M billed",
+    "fields": {
+      "billed": "3010000.00 USD",
+      "settled": "1900000.00 USD",
+      "derived_from": "dodo:decline-2026-W10#soft_rate, dodo:decline-2026-W10#insufficient_funds, dodo:decline-2026-W10#expired_card"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:settlement-2026-W10"
+    ]
+  },
+  "ap_ledger:run-2026-W10": {
+    "reference": "ap_ledger:run-2026-W10",
+    "source": "ap_ledger",
+    "excerpt": "Payment run 2026-W10 scheduled for 2026-03-05: $2.06M across 41 payables",
+    "fields": {
+      "total": "2060000.00 USD",
+      "derived_from": "ap_ledger:BILL-8841#due_date, ap_ledger:BILL-8863#due_date, ap_ledger:BILL-8877#due_date, ap_ledger:cadence-2026-W08"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:run-2026-W10"
     ]
   },
   "ar_ledger:INV-10517#amount_due": {

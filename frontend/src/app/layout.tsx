@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
+
+import { EvidenceProvider } from "@/components/evidence/EvidenceProvider";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,10 +22,10 @@ export const metadata: Metadata = {
 };
 
 const SCREENS = [
-  { key: "forecast", label: "Forecast", active: true },
-  { key: "war-room", label: "War Room", active: false },
-  { key: "recommendation", label: "Recommendation", active: false },
-  { key: "evidence", label: "Evidence Explorer", active: false },
+  { key: "forecast", label: "Forecast", href: "/" },
+  { key: "war-room", label: "War Room", href: null },
+  { key: "recommendation", label: "Recommendation", href: null },
+  { key: "evidence", label: "Evidence Explorer", href: "/evidence" },
 ];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -36,19 +40,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line px-4 py-3">
           <span className="font-mono text-sm font-semibold tracking-widest text-ink">WAR ROOM</span>
           <nav className="flex gap-4 text-xs" aria-label="Screens">
-            {SCREENS.map((screen) => (
-              <span
-                key={screen.key}
-                className={screen.active ? "text-ink" : "text-ink-3"}
-                aria-current={screen.active ? "page" : undefined}
-              >
-                {screen.label}
-              </span>
-            ))}
+            {SCREENS.map((screen) =>
+              screen.href ? (
+                <Link key={screen.key} href={screen.href} className="text-ink hover:text-accent">
+                  {screen.label}
+                </Link>
+              ) : (
+                /* The War Room only exists during an escalation, so it is not a place you
+                   can navigate to on a quiet Monday. */
+                <span key={screen.key} className="text-ink-3" title="Opens during an escalation">
+                  {screen.label}
+                </span>
+              ),
+            )}
           </nav>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <EvidenceProvider>
+          <main className="flex-1">{children}</main>
+        </EvidenceProvider>
       </body>
     </html>
   );

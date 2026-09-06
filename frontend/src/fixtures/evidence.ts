@@ -1,0 +1,464 @@
+/**
+ * GENERATED FILE -- do not edit.
+ *
+ * Run `npm run gen:evidence` to regenerate from
+ * `tests/fixtures/tools/resolve_evidence.json`. Parity is asserted in CI.
+ */
+
+import type { EvidenceRecord } from "@/lib/evidence";
+
+export const EVIDENCE_ROWS: EvidenceRecord[] = [
+  {
+    "reference": "ap_ledger:BILL-8841#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Acme Components, bill 8841, $1.1M, due 2026-03-19, 2/10 net 30",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "supplier": "Acme Components",
+      "amount": "1100000.00 USD",
+      "discount_forgone": "22000.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:BILL-8863#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Globex Logistics, bill 8863, $620K, due 2026-03-26, net 45",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "supplier": "Globex Logistics",
+      "amount": "620000.00 USD",
+      "due_date": "2026-03-26"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:BILL-8877#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Initech Software, bill 8877, $340K, due 2026-04-02, 2/10 net 30",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "supplier": "Initech Software",
+      "amount": "340000.00 USD",
+      "due_date": "2026-04-02",
+      "discount_forgone": "6800.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:cadence-2026-W08",
+    "source": "ap_ledger",
+    "excerpt": "Payment run cadence: weekly, Thursday, last confirmed 2026-02-24",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:PAY-2026-W12#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Payroll run 2026-W12, $2.45M, due 2026-03-20, protected payment class",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "payment_class": "payroll",
+      "amount": "2450000.00 USD",
+      "due_date": "2026-03-20",
+      "protected": "true"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:run-2026-W09",
+    "source": "ap_ledger",
+    "excerpt": "Payment run 2026-W09 executed two days early to capture a 2/10 discount worth $58K",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:run-2026-W10",
+    "source": "ap_ledger",
+    "excerpt": "Payment run 2026-W10 scheduled for 2026-03-05: $2.06M across 41 payables",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "total": "2060000.00 USD"
+    },
+    "derived_from": [
+      "ap_ledger:BILL-8841#due_date",
+      "ap_ledger:BILL-8863#due_date",
+      "ap_ledger:BILL-8877#due_date",
+      "ap_ledger:cadence-2026-W08"
+    ]
+  },
+  {
+    "reference": "ap_ledger:supplier-acme#risk",
+    "source": "ap_ledger",
+    "excerpt": "Acme Components: sole source, 31% of category spend, 3 late payments in 6 months",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:supplier-globex#risk",
+    "source": "ap_ledger",
+    "excerpt": "Globex Logistics: two qualified alternates, 8% of category spend, no late payments in 6 months",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "ap_ledger:TAX-2026-Q1#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Statutory tax remittance 2026-Q1, $850K, due 2026-03-27, protected payment class",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "payment_class": "tax",
+      "amount": "850000.00 USD",
+      "due_date": "2026-03-27",
+      "protected": "true"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ar_ledger:aging-2026-W10",
+    "source": "ar_ledger",
+    "excerpt": "AR aging at 2026-03-02: $8.42M open across 68 invoices",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "total": "8420000.00 USD"
+    },
+    "derived_from": [
+      "ar_ledger:INV-10482#amount_due",
+      "ar_ledger:INV-10517#amount_due",
+      "ar_ledger:INV-10466#amount_due",
+      "ar_ledger:INV-10530#amount_due",
+      "ar_ledger:INV-10493#amount_due"
+    ]
+  },
+  {
+    "reference": "ar_ledger:curve-2026-W09",
+    "source": "ar_ledger",
+    "excerpt": "Empirical 30-day collection curve: 72% of open AR settles inside terms",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "ar_ledger:INV-10466#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Northwind Traders, invoice 10466, $640K, due 2026-01-09, 52 days past terms, disputed",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "customer": "Northwind Traders",
+      "amount_due": "640000.00 USD",
+      "due_date": "2026-01-09",
+      "dispute": "delivery shortfall"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ar_ledger:INV-10482#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Contoso Ltd, invoice 10482, $1.2M, due 2026-01-20, 41 days past terms",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "customer": "Contoso Ltd",
+      "amount_due": "1200000.00 USD",
+      "due_date": "2026-01-20",
+      "dispute": "delivery note"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ar_ledger:INV-10493#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Adventure Works, invoice 10493, $350K, due 2026-02-02, 28 days past terms",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "customer": "Adventure Works",
+      "amount_due": "350000.00 USD",
+      "due_date": "2026-02-02",
+      "note": "partial payment plan proposed last quarter"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ar_ledger:INV-10517#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Fabrikam Inc, invoice 10517, $880K, due 2026-02-13, 17 days past terms",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "customer": "Fabrikam Inc",
+      "amount_due": "880000.00 USD",
+      "due_date": "2026-02-13"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "ar_ledger:INV-10530#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Tailspin Systems, invoice 10530, $410K, due 2026-02-24, 6 days past terms",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "customer": "Tailspin Systems",
+      "amount_due": "410000.00 USD",
+      "due_date": "2026-02-24"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "bank:balance-2026-03-02",
+    "source": "bank",
+    "excerpt": "Reconciled bank balance at 2026-03-02: $24.8M across four accounts",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "debt:covenant-dscr-2026Q1",
+    "source": "debt",
+    "excerpt": "Debt service coverage 1.42x against a 1.25x threshold, tested 2026-02-28, 13.6% headroom",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "debt:covenant-util-2026Q1",
+    "source": "debt",
+    "excerpt": "Revolver utilization 0.42 against a 0.65 ceiling, tested 2026-02-28, 35.4% headroom",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "debt:schedule-2026",
+    "source": "debt",
+    "excerpt": "Debt service schedule: $640K every four weeks against the 2026 term facility",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:decline-2026-W10#closed_account",
+    "source": "dodo",
+    "excerpt": "closed_account (hard): 44 declines, $68000.00 at risk, $0.00 recoverable, no retry under Dodo's taxonomy",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "kind": "hard",
+      "count": "44",
+      "amount": "68000.00 USD",
+      "recoverable": "0.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:decline-2026-W10#do_not_honor",
+    "source": "dodo",
+    "excerpt": "do_not_honor (soft): 96 declines, $148000.00 at risk, $61000.00 recoverable, 7-day retry window",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "kind": "soft",
+      "count": "96",
+      "amount": "148000.00 USD",
+      "recoverable": "61000.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:decline-2026-W10#expired_card",
+    "source": "dodo",
+    "excerpt": "expired_card (soft): 168 declines, $240000.00 at risk, $158400.00 recoverable, 21-day retry window",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "kind": "soft",
+      "count": "168",
+      "amount": "240000.00 USD",
+      "recoverable": "158400.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:decline-2026-W10#insufficient_funds",
+    "source": "dodo",
+    "excerpt": "insufficient_funds (soft): 412 declines, $620000.00 at risk, $378200.00 recoverable, 14-day retry window",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "kind": "soft",
+      "count": "412",
+      "amount": "620000.00 USD",
+      "recoverable": "378200.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:decline-2026-W10#soft_rate",
+    "source": "dodo",
+    "excerpt": "Soft declines 8.4% of the renewal cohort, up 3.1pp week on week; $597.6K recoverable inside documented retry windows",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:decline-2026-W10#stolen_card",
+    "source": "dodo",
+    "excerpt": "stolen_card (hard): 21 declines, $32000.00 at risk, $0.00 recoverable, no retry under Dodo's taxonomy",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "kind": "hard",
+      "count": "21",
+      "amount": "32000.00 USD",
+      "recoverable": "0.00 USD"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "dodo:settlement-2026-W10",
+    "source": "dodo",
+    "excerpt": "Dodo settlement 2026-W10: $1.90M received against $3.01M billed",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "billed": "3010000.00 USD",
+      "settled": "1900000.00 USD"
+    },
+    "derived_from": [
+      "dodo:decline-2026-W10#soft_rate",
+      "dodo:decline-2026-W10#insufficient_funds",
+      "dodo:decline-2026-W10#expired_card"
+    ]
+  },
+  {
+    "reference": "forecast:accuracy-2026-W10",
+    "source": "forecast",
+    "excerpt": "Measured 13-week forecast error to 2026-W10: p50 4.1%, p90 11.8% on receipts",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "forecast:fv-2026-W10",
+    "source": "forecast",
+    "excerpt": "Forecast version fv-2026-W10, draft, minimum cash $18.4M at W6",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": [
+      "bank:balance-2026-03-02",
+      "ar_ledger:aging-2026-W10",
+      "dodo:settlement-2026-W10",
+      "ap_ledger:cadence-2026-W08",
+      "policy:treasury-policy-v4#min_cash"
+    ]
+  },
+  {
+    "reference": "gl:accuracy-note-2026-W10",
+    "source": "gl",
+    "excerpt": "Forecast accuracy roll-forward published with the W10 close",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "gl:opex-2026-W09",
+    "source": "gl",
+    "excerpt": "Operating expenses 2026-W09: $1.42M actual against $1.45M plan",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "gl:opex-runrate-2026-W09",
+    "source": "gl",
+    "excerpt": "Operating expense run-rate from the trailing 8 weeks: $1.45M per week",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "gl:other-receipts-2026-W10",
+    "source": "gl",
+    "excerpt": "Other receipts run-rate: $180K-$320K per week, trailing 8 weeks",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "payroll:schedule-2026-Q1",
+    "source": "payroll",
+    "excerpt": "Payroll schedule 2026-Q1: fortnightly, $2.40M rising to $2.50M from W11",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {
+      "cadence": "fortnightly",
+      "next_run": "2026-03-06"
+    },
+    "derived_from": []
+  },
+  {
+    "reference": "policy:treasury-policy-v4#min_cash",
+    "source": "policy",
+    "excerpt": "TreasuryPolicy v4: minimum operating cash $20.0M, hard constraint",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "policy:treasury-policy-v4#protected_classes",
+    "source": "policy",
+    "excerpt": "TreasuryPolicy v4: payroll and statutory tax are protected payment classes",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "policy:treasury-policy-v4#supplier_delay",
+    "source": "policy",
+    "excerpt": "TreasuryPolicy v4: suppliers are not stretched beyond 30 days past terms, soft constraint",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  },
+  {
+    "reference": "tax_calendar:2026-Q1",
+    "source": "tax_calendar",
+    "excerpt": "Statutory tax calendar 2026-Q1: $850K due 2026-03-27, $900K due 2026-04-24",
+    "as_of": "2026-03-02",
+    "resolved": true,
+    "fields": {},
+    "derived_from": []
+  }
+];

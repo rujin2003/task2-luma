@@ -31,6 +31,8 @@ export interface ForecastWeek {
   closing_cash: Money;
   basis: CellBasis;
   breaches_floor: boolean;
+  /** The forecast version row this closing balance came from. */
+  reference?: string;
 }
 
 export interface VarianceItem {
@@ -42,6 +44,12 @@ export interface VarianceItem {
   explanation: string;
   explained_by?: AgentRole;
   evidence_reference?: string;
+  /**
+   * Why there is no explanation, when there is none. A degraded row says so in the row --
+   * an unexplained material delta is information, and hiding it behind a blank line is
+   * how a treasurer ends up believing the bridge is complete when it is not.
+   */
+  unexplained_reason?: string;
 }
 
 export interface ExceptionItem {
@@ -61,6 +69,9 @@ export interface AccuracyPoint {
 
 export interface LiquiditySummary {
   cash_today: Money;
+  cash_today_reference?: string;
+  floor_reference?: string;
+  min_cash_reference?: string;
   forecast_min_cash: Money;
   forecast_min_week: number;
   floor: Money;

@@ -1,5 +1,6 @@
 import type { ExceptionItem } from "@/lib/forecast";
 
+import { Traced } from "./evidence/Traced";
 import { Panel, StatusTag } from "./primitives";
 
 const SEVERITY_LABEL: Record<ExceptionItem["severity"], string> = {
@@ -35,7 +36,9 @@ export function ExceptionsQueue({ exceptions }: { exceptions: ExceptionItem[] })
             {exception.reference ? (
               <p className="mt-1 font-mono text-xs text-ink-3">
                 {exception.week_index ? `W${exception.week_index} · ` : ""}
-                {exception.reference}
+                <Traced reference={exception.reference} label={exception.headline}>
+                  {exception.reference}
+                </Traced>
               </p>
             ) : null}
           </li>

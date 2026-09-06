@@ -492,6 +492,18 @@ ev(
     "ar_ledger",
     "AR aging at 2026-03-02: $8.42M open across 68 invoices",
     total="8420000.00 USD",
+    # `derived_from` is how the Evidence Explorer walks an aggregate down to the rows it
+    # was computed from. It lives in `fields` because the payload contract has no
+    # provenance edge yet -- that is a shared-contract change to agree at Merge Point 1.
+    derived_from=", ".join(
+        [
+            "ar_ledger:INV-10482#amount_due",
+            "ar_ledger:INV-10517#amount_due",
+            "ar_ledger:INV-10466#amount_due",
+            "ar_ledger:INV-10530#amount_due",
+            "ar_ledger:INV-10493#amount_due",
+        ]
+    ),
 )
 ev(
     "ar_ledger:curve-2026-W09",
@@ -515,6 +527,36 @@ ev(
     "ap_ledger:run-2026-W09",
     "ap_ledger",
     "Payment run 2026-W09 executed two days early to capture a 2/10 discount worth $58K",
+)
+# Schedule rows behind the forecast lines that are not a ledger balance: payroll, the tax
+# calendar, the debt schedule. Without these, a cell on the Forecast screen would show a
+# number with nothing underneath it, which is the one thing that screen must not do.
+ev(
+    "payroll:schedule-2026-Q1",
+    "payroll",
+    "Payroll schedule 2026-Q1: fortnightly, $2.40M rising to $2.50M from W11",
+    cadence="fortnightly",
+    next_run="2026-03-06",
+)
+ev(
+    "tax_calendar:2026-Q1",
+    "tax_calendar",
+    "Statutory tax calendar 2026-Q1: $850K due 2026-03-27, $900K due 2026-04-24",
+)
+ev(
+    "debt:schedule-2026",
+    "debt",
+    "Debt service schedule: $640K every four weeks against the 2026 term facility",
+)
+ev(
+    "gl:other-receipts-2026-W10",
+    "gl",
+    "Other receipts run-rate: $180K-$320K per week, trailing 8 weeks",
+)
+ev(
+    "gl:accuracy-note-2026-W10",
+    "gl",
+    "Forecast accuracy roll-forward published with the W10 close",
 )
 ev(
     "dodo:decline-2026-W10#soft_rate",
@@ -541,6 +583,43 @@ ev(
     "forecast:fv-2026-W10",
     "forecast",
     "Forecast version fv-2026-W10, draft, minimum cash $18.4M at W6",
+    derived_from=", ".join(
+        [
+            "bank:balance-2026-03-02",
+            "ar_ledger:aging-2026-W10",
+            "dodo:settlement-2026-W10",
+            "ap_ledger:cadence-2026-W08",
+            "policy:treasury-policy-v4#min_cash",
+        ]
+    ),
+)
+ev(
+    "dodo:settlement-2026-W10",
+    "dodo",
+    "Dodo settlement 2026-W10: $1.90M received against $3.01M billed",
+    billed="3010000.00 USD",
+    settled="1900000.00 USD",
+    derived_from=", ".join(
+        [
+            "dodo:decline-2026-W10#soft_rate",
+            "dodo:decline-2026-W10#insufficient_funds",
+            "dodo:decline-2026-W10#expired_card",
+        ]
+    ),
+)
+ev(
+    "ap_ledger:run-2026-W10",
+    "ap_ledger",
+    "Payment run 2026-W10 scheduled for 2026-03-05: $2.06M across 41 payables",
+    total="2060000.00 USD",
+    derived_from=", ".join(
+        [
+            "ap_ledger:BILL-8841#due_date",
+            "ap_ledger:BILL-8863#due_date",
+            "ap_ledger:BILL-8877#due_date",
+            "ap_ledger:cadence-2026-W08",
+        ]
+    ),
 )
 
 # Every reference any tool returns has to resolve, or an agent that cites a row it was
