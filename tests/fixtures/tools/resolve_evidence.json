@@ -130,5 +130,298 @@
     "references": [
       "forecast:fv-2026-W10"
     ]
+  },
+  "ar_ledger:INV-10517#amount_due": {
+    "reference": "ar_ledger:INV-10517#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Fabrikam Inc, invoice 10517, $880K, due 2026-02-13, 17 days past terms",
+    "fields": {
+      "customer": "Fabrikam Inc",
+      "amount_due": "880000.00 USD",
+      "due_date": "2026-02-13"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:INV-10517#amount_due"
+    ]
+  },
+  "ar_ledger:INV-10466#amount_due": {
+    "reference": "ar_ledger:INV-10466#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Northwind Traders, invoice 10466, $640K, due 2026-01-09, 52 days past terms, disputed",
+    "fields": {
+      "customer": "Northwind Traders",
+      "amount_due": "640000.00 USD",
+      "due_date": "2026-01-09",
+      "dispute": "delivery shortfall"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:INV-10466#amount_due"
+    ]
+  },
+  "ar_ledger:INV-10530#amount_due": {
+    "reference": "ar_ledger:INV-10530#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Tailspin Systems, invoice 10530, $410K, due 2026-02-24, 6 days past terms",
+    "fields": {
+      "customer": "Tailspin Systems",
+      "amount_due": "410000.00 USD",
+      "due_date": "2026-02-24"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:INV-10530#amount_due"
+    ]
+  },
+  "ar_ledger:INV-10493#amount_due": {
+    "reference": "ar_ledger:INV-10493#amount_due",
+    "source": "ar_ledger",
+    "excerpt": "Adventure Works, invoice 10493, $350K, due 2026-02-02, 28 days past terms",
+    "fields": {
+      "customer": "Adventure Works",
+      "amount_due": "350000.00 USD",
+      "due_date": "2026-02-02",
+      "note": "partial payment plan proposed last quarter"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ar_ledger:INV-10493#amount_due"
+    ]
+  },
+  "ap_ledger:BILL-8863#due_date": {
+    "reference": "ap_ledger:BILL-8863#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Globex Logistics, bill 8863, $620K, due 2026-03-26, net 45",
+    "fields": {
+      "supplier": "Globex Logistics",
+      "amount": "620000.00 USD",
+      "due_date": "2026-03-26"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:BILL-8863#due_date"
+    ]
+  },
+  "ap_ledger:BILL-8877#due_date": {
+    "reference": "ap_ledger:BILL-8877#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Initech Software, bill 8877, $340K, due 2026-04-02, 2/10 net 30",
+    "fields": {
+      "supplier": "Initech Software",
+      "amount": "340000.00 USD",
+      "due_date": "2026-04-02",
+      "discount_forgone": "6800.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:BILL-8877#due_date"
+    ]
+  },
+  "ap_ledger:PAY-2026-W12#due_date": {
+    "reference": "ap_ledger:PAY-2026-W12#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Payroll run 2026-W12, $2.45M, due 2026-03-20, protected payment class",
+    "fields": {
+      "payment_class": "payroll",
+      "amount": "2450000.00 USD",
+      "due_date": "2026-03-20",
+      "protected": "true"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:PAY-2026-W12#due_date"
+    ]
+  },
+  "ap_ledger:TAX-2026-Q1#due_date": {
+    "reference": "ap_ledger:TAX-2026-Q1#due_date",
+    "source": "ap_ledger",
+    "excerpt": "Statutory tax remittance 2026-Q1, $850K, due 2026-03-27, protected payment class",
+    "fields": {
+      "payment_class": "tax",
+      "amount": "850000.00 USD",
+      "due_date": "2026-03-27",
+      "protected": "true"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:TAX-2026-Q1#due_date"
+    ]
+  },
+  "ap_ledger:supplier-globex#risk": {
+    "reference": "ap_ledger:supplier-globex#risk",
+    "source": "ap_ledger",
+    "excerpt": "Globex Logistics: two qualified alternates, 8% of category spend, no late payments in 6 months",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:supplier-globex#risk"
+    ]
+  },
+  "ap_ledger:cadence-2026-W08": {
+    "reference": "ap_ledger:cadence-2026-W08",
+    "source": "ap_ledger",
+    "excerpt": "Payment run cadence: weekly, Thursday, last confirmed 2026-02-24",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "ap_ledger:cadence-2026-W08"
+    ]
+  },
+  "debt:covenant-dscr-2026Q1": {
+    "reference": "debt:covenant-dscr-2026Q1",
+    "source": "debt",
+    "excerpt": "Debt service coverage 1.42x against a 1.25x threshold, tested 2026-02-28, 13.6% headroom",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "debt:covenant-dscr-2026Q1"
+    ]
+  },
+  "debt:covenant-util-2026Q1": {
+    "reference": "debt:covenant-util-2026Q1",
+    "source": "debt",
+    "excerpt": "Revolver utilization 0.42 against a 0.65 ceiling, tested 2026-02-28, 35.4% headroom",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "debt:covenant-util-2026Q1"
+    ]
+  },
+  "policy:treasury-policy-v4#supplier_delay": {
+    "reference": "policy:treasury-policy-v4#supplier_delay",
+    "source": "policy",
+    "excerpt": "TreasuryPolicy v4: suppliers are not stretched beyond 30 days past terms, soft constraint",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "policy:treasury-policy-v4#supplier_delay"
+    ]
+  },
+  "gl:opex-2026-W09": {
+    "reference": "gl:opex-2026-W09",
+    "source": "gl",
+    "excerpt": "Operating expenses 2026-W09: $1.42M actual against $1.45M plan",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "gl:opex-2026-W09"
+    ]
+  },
+  "gl:opex-runrate-2026-W09": {
+    "reference": "gl:opex-runrate-2026-W09",
+    "source": "gl",
+    "excerpt": "Operating expense run-rate from the trailing 8 weeks: $1.45M per week",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "gl:opex-runrate-2026-W09"
+    ]
+  },
+  "forecast:accuracy-2026-W10": {
+    "reference": "forecast:accuracy-2026-W10",
+    "source": "forecast",
+    "excerpt": "Measured 13-week forecast error to 2026-W10: p50 4.1%, p90 11.8% on receipts",
+    "fields": {},
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "forecast:accuracy-2026-W10"
+    ]
+  },
+  "dodo:decline-2026-W10#insufficient_funds": {
+    "reference": "dodo:decline-2026-W10#insufficient_funds",
+    "source": "dodo",
+    "excerpt": "insufficient_funds (soft): 412 declines, $620000.00 at risk, $378200.00 recoverable, 14-day retry window",
+    "fields": {
+      "kind": "soft",
+      "count": "412",
+      "amount": "620000.00 USD",
+      "recoverable": "378200.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:decline-2026-W10#insufficient_funds"
+    ]
+  },
+  "dodo:decline-2026-W10#expired_card": {
+    "reference": "dodo:decline-2026-W10#expired_card",
+    "source": "dodo",
+    "excerpt": "expired_card (soft): 168 declines, $240000.00 at risk, $158400.00 recoverable, 21-day retry window",
+    "fields": {
+      "kind": "soft",
+      "count": "168",
+      "amount": "240000.00 USD",
+      "recoverable": "158400.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:decline-2026-W10#expired_card"
+    ]
+  },
+  "dodo:decline-2026-W10#do_not_honor": {
+    "reference": "dodo:decline-2026-W10#do_not_honor",
+    "source": "dodo",
+    "excerpt": "do_not_honor (soft): 96 declines, $148000.00 at risk, $61000.00 recoverable, 7-day retry window",
+    "fields": {
+      "kind": "soft",
+      "count": "96",
+      "amount": "148000.00 USD",
+      "recoverable": "61000.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:decline-2026-W10#do_not_honor"
+    ]
+  },
+  "dodo:decline-2026-W10#stolen_card": {
+    "reference": "dodo:decline-2026-W10#stolen_card",
+    "source": "dodo",
+    "excerpt": "stolen_card (hard): 21 declines, $32000.00 at risk, $0.00 recoverable, no retry under Dodo's taxonomy",
+    "fields": {
+      "kind": "hard",
+      "count": "21",
+      "amount": "32000.00 USD",
+      "recoverable": "0.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:decline-2026-W10#stolen_card"
+    ]
+  },
+  "dodo:decline-2026-W10#closed_account": {
+    "reference": "dodo:decline-2026-W10#closed_account",
+    "source": "dodo",
+    "excerpt": "closed_account (hard): 44 declines, $68000.00 at risk, $0.00 recoverable, no retry under Dodo's taxonomy",
+    "fields": {
+      "kind": "hard",
+      "count": "44",
+      "amount": "68000.00 USD",
+      "recoverable": "0.00 USD"
+    },
+    "resolved": true,
+    "as_of": "2026-03-02",
+    "references": [
+      "dodo:decline-2026-W10#closed_account"
+    ]
   }
 }

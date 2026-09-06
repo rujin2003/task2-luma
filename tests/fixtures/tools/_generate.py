@@ -543,6 +543,137 @@ ev(
     "Forecast version fv-2026-W10, draft, minimum cash $18.4M at W6",
 )
 
+# Every reference any tool returns has to resolve, or an agent that cites a row it was
+# handed loses the finding for a fixture gap rather than a fabrication. The rule is:
+# nothing above the evidence validator gets to decide which citations are real.
+ev(
+    "ar_ledger:INV-10517#amount_due",
+    "ar_ledger",
+    "Fabrikam Inc, invoice 10517, $880K, due 2026-02-13, 17 days past terms",
+    customer="Fabrikam Inc",
+    amount_due="880000.00 USD",
+    due_date="2026-02-13",
+)
+ev(
+    "ar_ledger:INV-10466#amount_due",
+    "ar_ledger",
+    "Northwind Traders, invoice 10466, $640K, due 2026-01-09, 52 days past terms, disputed",
+    customer="Northwind Traders",
+    amount_due="640000.00 USD",
+    due_date="2026-01-09",
+    dispute="delivery shortfall",
+)
+ev(
+    "ar_ledger:INV-10530#amount_due",
+    "ar_ledger",
+    "Tailspin Systems, invoice 10530, $410K, due 2026-02-24, 6 days past terms",
+    customer="Tailspin Systems",
+    amount_due="410000.00 USD",
+    due_date="2026-02-24",
+)
+ev(
+    "ar_ledger:INV-10493#amount_due",
+    "ar_ledger",
+    "Adventure Works, invoice 10493, $350K, due 2026-02-02, 28 days past terms",
+    customer="Adventure Works",
+    amount_due="350000.00 USD",
+    due_date="2026-02-02",
+    note="partial payment plan proposed last quarter",
+)
+ev(
+    "ap_ledger:BILL-8863#due_date",
+    "ap_ledger",
+    "Globex Logistics, bill 8863, $620K, due 2026-03-26, net 45",
+    supplier="Globex Logistics",
+    amount="620000.00 USD",
+    due_date="2026-03-26",
+)
+ev(
+    "ap_ledger:BILL-8877#due_date",
+    "ap_ledger",
+    "Initech Software, bill 8877, $340K, due 2026-04-02, 2/10 net 30",
+    supplier="Initech Software",
+    amount="340000.00 USD",
+    due_date="2026-04-02",
+    discount_forgone="6800.00 USD",
+)
+ev(
+    "ap_ledger:PAY-2026-W12#due_date",
+    "ap_ledger",
+    "Payroll run 2026-W12, $2.45M, due 2026-03-20, protected payment class",
+    payment_class="payroll",
+    amount="2450000.00 USD",
+    due_date="2026-03-20",
+    protected="true",
+)
+ev(
+    "ap_ledger:TAX-2026-Q1#due_date",
+    "ap_ledger",
+    "Statutory tax remittance 2026-Q1, $850K, due 2026-03-27, protected payment class",
+    payment_class="tax",
+    amount="850000.00 USD",
+    due_date="2026-03-27",
+    protected="true",
+)
+ev(
+    "ap_ledger:supplier-globex#risk",
+    "ap_ledger",
+    "Globex Logistics: two qualified alternates, 8% of category spend, "
+    "no late payments in 6 months",
+)
+ev(
+    "ap_ledger:cadence-2026-W08",
+    "ap_ledger",
+    "Payment run cadence: weekly, Thursday, last confirmed 2026-02-24",
+)
+ev(
+    "debt:covenant-dscr-2026Q1",
+    "debt",
+    "Debt service coverage 1.42x against a 1.25x threshold, tested 2026-02-28, 13.6% headroom",
+)
+ev(
+    "debt:covenant-util-2026Q1",
+    "debt",
+    "Revolver utilization 0.42 against a 0.65 ceiling, tested 2026-02-28, 35.4% headroom",
+)
+ev(
+    "policy:treasury-policy-v4#supplier_delay",
+    "policy",
+    "TreasuryPolicy v4: suppliers are not stretched beyond 30 days past terms, soft constraint",
+)
+ev(
+    "gl:opex-2026-W09",
+    "gl",
+    "Operating expenses 2026-W09: $1.42M actual against $1.45M plan",
+)
+ev(
+    "gl:opex-runrate-2026-W09",
+    "gl",
+    "Operating expense run-rate from the trailing 8 weeks: $1.45M per week",
+)
+ev(
+    "forecast:accuracy-2026-W10",
+    "forecast",
+    "Measured 13-week forecast error to 2026-W10: p50 4.1%, p90 11.8% on receipts",
+)
+for _code, _kind, _count, _amount, _recoverable, _window in [
+    ("insufficient_funds", "soft", 412, "620000.00", "378200.00", "14-day retry window"),
+    ("expired_card", "soft", 168, "240000.00", "158400.00", "21-day retry window"),
+    ("do_not_honor", "soft", 96, "148000.00", "61000.00", "7-day retry window"),
+    ("stolen_card", "hard", 21, "32000.00", "0.00", "no retry under Dodo's taxonomy"),
+    ("closed_account", "hard", 44, "68000.00", "0.00", "no retry under Dodo's taxonomy"),
+]:
+    ev(
+        f"dodo:decline-2026-W10#{_code}",
+        "dodo",
+        f"{_code} ({_kind}): {_count} declines, ${_amount} at risk, "
+        f"${_recoverable} recoverable, {_window}",
+        kind=_kind,
+        count=_count,
+        amount=f"{_amount} USD",
+        recoverable=f"{_recoverable} USD",
+    )
+
 files["resolve_evidence"] = evidence
 
 
