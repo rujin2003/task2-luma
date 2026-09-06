@@ -1,0 +1,15 @@
+[
+  {
+    "agent": "stress_test",
+    "default": true,
+    "note": "Selects both calibrated series plus the combined case.",
+    "output": {
+      "stressor_ids": [
+        "ar_collections",
+        "dodo_receipts",
+        "combined"
+      ],
+      "rationale": "Every bundle here leans on receipts, so both measured error series apply, and the combined case is the one that matters: an AR slip and a decline spike are the same weak quarter, not two independent accidents."
+    }
+  }
+]

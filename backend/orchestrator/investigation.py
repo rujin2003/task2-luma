@@ -1,501 +1,470 @@
-"""The investigation state machine: plan → wave → conflict → scenarios → stress → replan.
+"""The investigation state machine: one war room, opened, run, replanned and closed.
 
-This is the escalation branch. Deterministic composition and stress math sit beside the
-specialist wave so the golden path is byte-identical under FakeProvider + FixtureToolset.
+This is the escalation branch of the weekly cycle, and it exists only because step 10 of
+that cycle found a specific, dated, quantified breach. It is a state machine rather than a
+script for one reason: it has to be able to fail partway and still produce something a
+treasurer can act on.
+
+The order is fixed and each phase is streamed:
+
+    planning -> investigating -> resolving conflicts -> generating scenarios
+             -> stress testing -> [replanning] -> recommending -> closed
+
+The replan loop is the part worth reading carefully. A bundle that fails stress does not
+disappear and is not quietly swapped; the failure reason is recorded as a `ReplanAttempt`,
+the constraint it failed is tightened, and the next candidate must satisfy the tightened
+constraint to be selected at all. The full attempt history travels into the recommendation,
+because "we tried the cheaper plan and it did not survive an AR shortfall at our own 90th
+percentile" is the most persuasive sentence in the whole output, and deleting the failed
+attempt deletes it.
+
+Every bound is explicit: replan count, follow-up depth, and a wall clock. An investigation
+that could run forever on contradictory data will meet contradictory data.
 """
 
 from __future__ import annotations
 
+import time
 import uuid
-from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
-from backend.agents.fake import FakeProvider
+from pydantic import BaseModel, ConfigDict, Field
+
+from backend.agents.context import Incident
 from backend.agents.provider import LLMProvider
-from backend.agents.routing import ModelRouting, load_routing
-from backend.agents.runner import AgentRunner
-from backend.agents.specialists import build
-from backend.agents.specialists.supplier_risk import SupplierRiskAgent
-from backend.contracts.agent import (
-    ActionKind,
-    AgentFinding,
-    AgentRole,
-    AgentRun,
-    ProposedAction,
-)
-from backend.contracts.approvals import (
-    ApprovalRequest,
-    ApprovalRole,
-    ApprovalRoute,
-    ApprovalState,
-)
+from backend.agents.routing import ModelRouting
+from backend.contracts.agent import ActionKind, AgentRun, ProposedAction
 from backend.contracts.constraints import ConstraintViolation
 from backend.contracts.events import (
-    ApprovalRequested,
-    ConflictDetected,
-    ConflictResolved,
-    FollowupDispatched,
     InvestigationClosed,
     InvestigationOpened,
     InvestigationPhase,
     InvestigationPhaseChanged,
-    PlanSelected,
     RecommendationReady,
     ReplanStarted,
     ScenarioGenerated,
     StatusMark,
-    StressCompleted,
+    SystemDegraded,
 )
 from backend.contracts.money import Money
-from backend.contracts.strategy import (
-    Recommendation,
-    ReplanAttempt,
-    Strategy,
-    StressResult,
-    WorklistItem,
-)
+from backend.contracts.strategy import Recommendation, ReplanAttempt, Strategy, StressResult
 from backend.orchestrator.bus import EventBus
-from backend.orchestrator.conflicts import (
-    detect_conflicts,
-    resolve_conflict,
-    surviving_actions,
-)
-from backend.orchestrator.executor import AgentExecutor, WaveUnit
-from backend.orchestrator.plans import select_plan, skipped_agents
-from backend.orchestrator.runs import InMemoryRunStore
-from backend.orchestrator.scenarios import (
-    compose_worklist,
-    price_strategies,
-    propose_strategy_bundles,
-    rejected_from_findings,
-)
-from backend.orchestrator.stress import apply_stress, calibrate_stressors
+from backend.orchestrator.commander import Commander, Dispatch
+from backend.orchestrator.conflicts import ConflictResolver, ResolvedConflict, detect
+from backend.orchestrator.policy import PolicyCheck
+from backend.orchestrator.runs import RunStore
+from backend.orchestrator.stress import StressReport, StressTester
+from backend.orchestrator.worklist import Composition, ScoreCard, compose, to_worklist
 from backend.tools.toolset import Toolset
 
+# A bundle that has failed three differently-shaped stress tests is telling you the
+# shortfall is real, not that the fourth bundle is the answer.
+MAX_REPLANS = 3
 
-@dataclass
-class InvestigationResult:
+# The parallel wave is meant to finish in about a minute; the whole investigation is given
+# a generous multiple of that and then stops, degraded, with whatever it has.
+WALL_CLOCK_S = 180.0
+
+
+class InvestigationResult(BaseModel):
+    """Everything one war room produced, including the attempts that did not work."""
+
+    model_config = ConfigDict(frozen=True)
+
     investigation_id: str
     phase: InvestigationPhase
-    breach: ConstraintViolation
-    plan_id: str
-    findings: list[AgentFinding] = field(default_factory=list)
-    runs: list[AgentRun] = field(default_factory=list)
-    strategies: list[Strategy] = field(default_factory=list)
-    stress_results: list[StressResult] = field(default_factory=list)
-    replan_history: list[ReplanAttempt] = field(default_factory=list)
+    trigger: str
+    breach: ConstraintViolation | None = None
+    plan_id: str = ""
+    plan_rationale: str = ""
+    runs: list[AgentRun] = Field(default_factory=list)
+    conflicts: list[str] = Field(default_factory=list)
+    strategies: list[Strategy] = Field(default_factory=list)
+    scores: dict[str, ScoreCard] = Field(default_factory=dict)
+    stress_reports: list[StressReport] = Field(default_factory=list)
     recommendation: Recommendation | None = None
-    worklist: list[WorklistItem] = field(default_factory=list)
-    approvals: list[ApprovalRequest] = field(default_factory=list)
+    elapsed_ms: int = 0
+    degraded: bool = False
+    degradation_reasons: list[str] = Field(default_factory=list)
 
 
-class InvestigationRunner:
-    """Owns one war-room investigation from open to recommendation."""
+class Investigation:
+    """One war room, from the breach that opened it to the worklist it produced."""
 
     def __init__(
         self,
         *,
-        tools: Toolset,
+        provider: LLMProvider,
+        toolset: Toolset,
+        routing: ModelRouting,
         bus: EventBus,
-        provider: LLMProvider | None = None,
-        routing: ModelRouting | None = None,
-        company: str = "NovaTech Industries",
-        as_of: str = "2026-03-02",
-        max_replans: int = 2,
+        company: str,
+        as_of: date,
+        check: PolicyCheck,
+        store: RunStore | None = None,
+        investigation_id: str | None = None,
+        max_replans: int = MAX_REPLANS,
+        wall_clock_s: float = WALL_CLOCK_S,
     ) -> None:
-        self._tools = tools
+        self._provider = provider
+        self._toolset = toolset
+        self._routing = routing
         self._bus = bus
-        self._provider = provider or FakeProvider(strict=True)
-        self._routing = routing or load_routing()
         self._company = company
         self._as_of = as_of
+        self._check = check
+        self._store = store
         self._max_replans = max_replans
-        self._store = InMemoryRunStore()
+        self._wall_clock_s = wall_clock_s
+        self.investigation_id = investigation_id or f"inv-{uuid.uuid4().hex[:8]}"
+        self._began = 0.0
 
-    async def run(
-        self,
-        *,
-        breach: ConstraintViolation,
-        trigger: str,
-        incident_kind: str | None = None,
-        investigation_id: str | None = None,
-    ) -> InvestigationResult:
-        investigation_id = investigation_id or str(uuid.uuid4())
-        opened_at = datetime.now(UTC)
+    async def run(self) -> InvestigationResult:
+        breach = self._check.worst()
+        if breach is None:
+            raise ValueError(
+                "an investigation opens on a breach; this policy check found none, "
+                "which means the cycle published inside policy and there is nothing to do"
+            )
+        incident = self._check.incident()
+        self._began = time.perf_counter()
+
         self._bus.emit(
             InvestigationOpened,
-            investigation_id=investigation_id,
-            status_line=f"War room opened: {trigger}"[:200],
-            trigger=trigger[:200],
-            detected_at=opened_at,
-            quantum=breach.observed_money,
+            investigation_id=self.investigation_id,
+            status_line=f"War room opened: {breach.display()}"[:200],
+            trigger=breach.display()[:200],
+            detected_at=datetime.now(UTC),
+            quantum=_quantum(breach),
             breach=breach,
         )
-        self._phase(investigation_id, InvestigationPhase.PLANNING)
 
-        manifest = await self._tools.get_capability_manifest()
-        plan = select_plan(breach=breach, manifest=manifest, incident_kind=incident_kind)
-        self._bus.emit(
-            PlanSelected,
-            investigation_id=investigation_id,
-            status_line=f"Plan selected: {plan.label}"[:200],
-            plan_id=plan.plan_id,
-            invoked=list(plan.invoked),
-            skipped=skipped_agents(plan),
-        )
-
-        # Keep the Context Pack identical to the golden recordings: the incident is already
-        # on the bus via InvestigationOpened. Passing it into assemble() would move every
-        # fingerprint and break FakeProvider strict replay.
-        runner = AgentRunner(
+        degradations: list[str] = []
+        commander = Commander(
             provider=self._provider,
-            toolset=self._tools,
+            toolset=self._toolset,
             routing=self._routing,
             bus=self._bus,
             company=self._company,
-            as_of=self._as_of,
-            investigation_id=investigation_id,
+            as_of=str(self._as_of),
+            investigation_id=self.investigation_id,
+            incident=incident,
+            store=self._store,
         )
-        executor = AgentExecutor(
-            runner=runner, routing=self._routing, bus=self._bus, store=self._store
+
+        # 1. Plan.
+        self._phase(InvestigationPhase.PLANNING)
+        dispatch = await commander.plan(tuple(v.kind for v in self._check.hard_violations))
+        if not dispatch.model_selected:
+            degradations.append(f"planning: {dispatch.fallback_reason}")
+
+        # 2. Investigate in parallel.
+        self._phase(InvestigationPhase.INVESTIGATING)
+        dispatch = await commander.investigate(dispatch)
+        degradations.extend(dispatch.degradation_reasons())
+
+        # 3. Resolve contradictions, by evidence.
+        self._phase(InvestigationPhase.RESOLVING_CONFLICTS)
+        resolved = await self._resolve(dispatch, incident)
+        degradations.extend(
+            f"conflict {r.conflict.subject}: {r.fallback_reason}"
+            for r in resolved
+            if not r.model_resolved
         )
 
-        self._phase(investigation_id, InvestigationPhase.INVESTIGATING)
-        wave1 = [WaveUnit(spec=build(role)) for role in plan.invoked]
-        runs = await executor.run_wave(wave1)
-        findings = [r.finding for r in runs if r.finding is not None]
-
-        # Supplier Risk challenges AP proposals when AP ran.
-        ap_finding = next((f for f in findings if f.agent is AgentRole.AP_OPTIMIZATION), None)
-        if ap_finding is not None and AgentRole.AP_OPTIMIZATION in plan.invoked:
-            proposals = _supplier_challenge_proposals(ap_finding.recommended_actions)
-            if proposals:
-                supplier_run = (
-                    await executor.run_wave([WaveUnit(spec=SupplierRiskAgent(proposals=proposals))])
-                )[0]
-                runs.append(supplier_run)
-                if supplier_run.finding is not None:
-                    findings.append(supplier_run.finding)
-
-        # Conflicts
-        self._phase(investigation_id, InvestigationPhase.RESOLVING_CONFLICTS)
-        conflicts = detect_conflicts(findings)
-        resolutions = []
-        for conflict in conflicts:
-            self._bus.emit(
-                ConflictDetected,
-                investigation_id=investigation_id,
-                status_line=conflict.description[:200],
-                conflict_id=conflict.conflict_id,
-                kind=conflict.kind,
-                agents=list(conflict.agents),
-                description=conflict.description,
-            )
-            if conflict.kind.value == "semantic":
-                self._bus.emit(
-                    FollowupDispatched,
-                    investigation_id=investigation_id,
-                    status_line="Follow-up: uphold supplier evidence",
-                    conflict_id=conflict.conflict_id,
-                    agent=AgentRole.SUPPLIER_RISK,
-                    question="Which deferred documents does concentration evidence block?",
-                )
-            resolution = resolve_conflict(conflict, findings)
-            resolutions.append(resolution)
-            self._bus.emit(
-                ConflictResolved,
-                investigation_id=investigation_id,
-                status_line=resolution.resolution[:200],
-                conflict_id=resolution.conflict_id,
-                resolution=resolution.resolution,
-                upheld=resolution.upheld,
-                evidence=resolution.evidence,
-            )
-
-        actions = surviving_actions(findings, resolutions)
-        dropped = [a for r in resolutions for a in r.dropped_actions]
-        position = await self._tools.get_liquidity_position()
-
-        # Scenarios
-        self._phase(investigation_id, InvestigationPhase.GENERATING_SCENARIOS)
-        bundles = propose_strategy_bundles(actions)
-        strategies = price_strategies(bundles, position=position)
-        for strategy in strategies:
+        # 4. Compose bundles. Deterministic from here to the worklist.
+        self._phase(InvestigationPhase.GENERATING_SCENARIOS)
+        composition = await self._compose(dispatch, resolved)
+        for strategy in composition.strategies:
             self._bus.emit(
                 ScenarioGenerated,
-                investigation_id=investigation_id,
-                mark=StatusMark.OK if strategy.feasible else StatusMark.WARN,
-                status_line=f"Scenario: {strategy.name}"[:200],
+                investigation_id=self.investigation_id,
+                mark=StatusMark.INFO,
+                status_line=(
+                    f"{strategy.name}: {strategy.net_cash_impact} raised, "
+                    f"score {composition.scores[strategy.strategy_id].total}"
+                )[:200],
                 strategy=strategy,
             )
 
-        # Stress
-        self._phase(investigation_id, InvestigationPhase.STRESS_TESTING)
-        errors = await self._tools.get_forecast_error_percentiles(horizon_weeks=6)
-        stressors = calibrate_stressors(errors)
-        stress_results: list[StressResult] = []
-        for strategy in strategies:
-            # Golden path needs a first-round failure: stress the aggressive (no-revolver) set hard.
-            for stressor in stressors:
-                result = apply_stress(strategy, stressor, position=position)
-                stress_results.append(result)
-                self._bus.emit(
-                    StressCompleted,
-                    investigation_id=investigation_id,
-                    mark=StatusMark.OK if result.passed else StatusMark.WARN,
-                    status_line=(
-                        f"Stress {stressor.label}: "
-                        f"{'PASS' if result.passed else 'FAIL'} at {result.min_cash}"
-                    )[:200],
-                    result=result,
-                )
-
-        replan_history: list[ReplanAttempt] = []
-        # Golden path: stress the aggressive first strategy; replan if combined fails.
-        initial = next((s for s in strategies if s.feasible), strategies[0])
-        initial_combined = next(
-            (
-                r
-                for r in stress_results
-                if r.strategy_id == initial.strategy_id and r.stressor.stressor_id == "combined-p90"
-            ),
-            None,
+        # 5 and 6. Stress, and replan on the specific failure.
+        self._phase(InvestigationPhase.STRESS_TESTING)
+        selected, reports, attempts, stress_degradations = await self._stress_and_replan(
+            composition, incident
         )
-        selected = (
-            initial
-            if initial_combined is not None and initial_combined.passed and initial.feasible
-            else None
-        )
+        degradations.extend(stress_degradations)
 
-        # Replan if nothing survives the combined stressor.
-        attempt = 1
-        while selected is None and attempt <= self._max_replans:
-            self._phase(investigation_id, InvestigationPhase.REPLANNING)
-            failed = next(
-                (
-                    r
-                    for r in stress_results
-                    if not r.passed and r.stressor.stressor_id == "combined-p90"
-                ),
-                next((r for r in stress_results if not r.passed), None),
-            )
-            if failed is None:
-                break
-            replan = ReplanAttempt(
-                attempt=attempt,
-                strategy_id=failed.strategy_id,
-                failure_reason=(
-                    f"{failed.stressor.label} left min cash at {failed.min_cash} "
-                    f"below floor {failed.floor}"
-                ),
-                tightened_constraint="require_revolver_draw",
-            )
-            replan_history.append(replan)
-            self._bus.emit(
-                ReplanStarted,
-                investigation_id=investigation_id,
-                status_line=f"Replanning after {failed.stressor.label} failure"[:200],
-                attempt=replan,
-            )
-
-            # Tighten: force a revolver draw into a new robust bundle.
-            robust_actions = [
-                a
-                for a in actions
-                if a.kind is not ActionKind.AP_DEFER or a.document_ref != "BILL-8841"
-            ]
-            draw = ProposedAction(
-                kind=ActionKind.REVOLVER_DRAW,
-                rationale="Replan: draw revolver after combined stress failure",
-                amount=Money(minor_units=250_000_000, currency="USD"),
-                evidence_refs=["debt:revolver#available"],
-            )
-            robust_bundle = [*robust_actions, draw]
-            robust = price_strategies(
-                [robust_bundle],
-                position=position,
-                names=[f"Replan {attempt}: AR + Dodo + revolver"],
-            )[0]
-            robust = robust.model_copy(update={"strategy_id": f"strategy-replan-{attempt}"})
-            strategies.append(robust)
-            self._bus.emit(
-                ScenarioGenerated,
-                investigation_id=investigation_id,
-                status_line=f"Scenario: {robust.name}"[:200],
-                strategy=robust,
-            )
-
-            self._phase(investigation_id, InvestigationPhase.STRESS_TESTING)
-            for stressor in stressors:
-                result = apply_stress(robust, stressor, position=position)
-                stress_results.append(result)
-                self._bus.emit(
-                    StressCompleted,
-                    investigation_id=investigation_id,
-                    mark=StatusMark.OK if result.passed else StatusMark.WARN,
-                    status_line=(
-                        f"Stress {stressor.label}: "
-                        f"{'PASS' if result.passed else 'FAIL'} at {result.min_cash}"
-                    )[:200],
-                    result=result,
-                )
-            selected = _select_passing_strategy([robust], stress_results)
-            attempt += 1
-
-        if selected is None:
-            # Last resort: pick the strategy with the best (least negative) headroom under combined stress.
-            combined = [r for r in stress_results if r.stressor.stressor_id == "combined-p90"]
-            best = max(combined, key=lambda r: r.headroom.minor_units) if combined else None
-            if best is not None:
-                selected = next(s for s in strategies if s.strategy_id == best.strategy_id)
-
-        assert selected is not None
-
-        self._phase(investigation_id, InvestigationPhase.RECOMMENDING)
-        as_of_date = date.fromisoformat(self._as_of)
-        worklist = compose_worklist(selected, as_of=as_of_date)
-        rejected = rejected_from_findings(findings, dropped)
-        degraded = any(r.status.value in {"timeout", "failed", "degraded"} for r in runs)
-        recommendation = Recommendation(
-            recommendation_id=f"rec-{investigation_id[:8]}",
-            investigation_id=investigation_id,
-            selected_strategy=selected,
-            alternatives=[s for s in strategies if s.strategy_id != selected.strategy_id][:3],
-            worklist=worklist,
-            rejected_actions=rejected,
-            stress_results=[r for r in stress_results if r.strategy_id == selected.strategy_id],
-            replan_history=replan_history,
-            degraded=degraded,
-            degradation_reason="One or more agents did not complete" if degraded else None,
-            requires_human_review=True,
-            summary=(
-                f"Selected {selected.name} restoring projected min cash to "
-                f"{selected.projected_min_cash} after {len(replan_history)} replan(s)."
-            )[:1000],
+        # 7. Recommend.
+        self._phase(InvestigationPhase.RECOMMENDING)
+        recommendation = self._recommend(
+            dispatch, composition, selected, reports, attempts, degradations
         )
         self._bus.emit(
             RecommendationReady,
-            investigation_id=investigation_id,
-            status_line=f"Recommendation ready: {selected.name}"[:200],
+            investigation_id=self.investigation_id,
+            mark=StatusMark.WARN if recommendation.degraded else StatusMark.OK,
+            status_line=f"Recommendation: {recommendation.summary}"[:200],
             recommendation=recommendation,
         )
 
-        approvals = _approval_requests(recommendation, worklist, prepared_by="analyst.demo")
-        for request in approvals:
-            self._bus.emit(
-                ApprovalRequested,
-                investigation_id=investigation_id,
-                status_line=f"Approval required: {request.action}"[:200],
-                request=request,
-            )
-
-        self._phase(investigation_id, InvestigationPhase.AWAITING_APPROVAL)
+        self._phase(InvestigationPhase.CLOSED)
         self._bus.emit(
             InvestigationClosed,
-            investigation_id=investigation_id,
-            status_line="Investigation awaiting approval",
+            investigation_id=self.investigation_id,
+            mark=StatusMark.WARN if recommendation.degraded else StatusMark.OK,
+            status_line="War room closed",
             phase=InvestigationPhase.CLOSED,
             recommendation_id=recommendation.recommendation_id,
-            reason="Recommendation issued; consequential actions need human approval",
+            reason=recommendation.degradation_reason or "",
         )
-
         return InvestigationResult(
-            investigation_id=investigation_id,
-            phase=InvestigationPhase.AWAITING_APPROVAL,
+            investigation_id=self.investigation_id,
+            phase=InvestigationPhase.CLOSED,
+            trigger=breach.display(),
             breach=breach,
-            plan_id=plan.plan_id,
-            findings=findings,
-            runs=list(self._store.all(investigation_id=investigation_id)),
-            strategies=strategies,
-            stress_results=stress_results,
-            replan_history=replan_history,
+            plan_id=dispatch.plan.plan_id,
+            plan_rationale=dispatch.rationale,
+            runs=dispatch.runs,
+            conflicts=[r.conflict.conflict_id for r in resolved],
+            strategies=composition.strategies,
+            scores=composition.scores,
+            stress_reports=reports,
             recommendation=recommendation,
-            worklist=worklist,
-            approvals=approvals,
+            elapsed_ms=self._elapsed_ms(),
+            degraded=bool(degradations),
+            degradation_reasons=degradations,
         )
 
-    def _phase(self, investigation_id: str, phase: InvestigationPhase) -> None:
+    # --- phases -------------------------------------------------------------------------
+
+    def _phase(self, phase: InvestigationPhase, *, depth: int = 0) -> None:
         self._bus.emit(
             InvestigationPhaseChanged,
-            investigation_id=investigation_id,
+            investigation_id=self.investigation_id,
             mark=StatusMark.WORKING,
-            status_line=f"Phase: {phase.value}",
+            status_line=f"Phase: {phase.value.replace('_', ' ')}",
             phase=phase,
+            depth=depth,
+            elapsed_ms=self._elapsed_ms(),
         )
 
+    def _elapsed_ms(self) -> int:
+        return int((time.perf_counter() - self._began) * 1000)
 
-def _supplier_challenge_proposals(actions: list[ProposedAction]) -> list[ProposedAction]:
-    """Strip amounts so the Supplier Risk gather matches the golden fingerprint shape."""
-    return [
-        ProposedAction(
-            kind=action.kind,
-            rationale=action.rationale,
-            counterparty=action.counterparty,
-            document_ref=action.document_ref,
-            delay_days=action.delay_days,
-            evidence_refs=list(action.evidence_refs),
+    def _out_of_time(self) -> bool:
+        return (time.perf_counter() - self._began) > self._wall_clock_s
+
+    async def _resolve(
+        self, dispatch: Dispatch, incident: Incident | None
+    ) -> list[ResolvedConflict]:
+        conflicts = detect(dispatch.findings)
+        if not conflicts:
+            return []
+        resolver = ConflictResolver(
+            provider=self._provider,
+            toolset=self._toolset,
+            routing=self._routing,
+            bus=self._bus,
+            company=self._company,
+            as_of=str(self._as_of),
+            investigation_id=self.investigation_id,
+            incident=incident,
+            store=self._store,
         )
-        for action in actions
-        if action.kind is ActionKind.AP_DEFER
-    ]
+        return await resolver.resolve_all(conflicts, dispatch.findings)
 
-
-def _select_passing_strategy(
-    strategies: list[Strategy],
-    stress_results: list[StressResult],
-) -> Strategy | None:
-    """A strategy must pass the combined stressor to be selected."""
-    by_id = {s.strategy_id: s for s in strategies}
-    for result in stress_results:
-        if result.stressor.stressor_id == "combined-p90" and result.passed:
-            strategy = by_id.get(result.strategy_id)
-            if strategy is not None and strategy.feasible:
-                return strategy
-    return None
-
-
-def _approval_requests(
-    recommendation: Recommendation,
-    worklist: list[WorklistItem],
-    *,
-    prepared_by: str,
-) -> list[ApprovalRequest]:
-    from backend.contracts.approvals import ApprovalRole as AR
-
-    requests: list[ApprovalRequest] = []
-    now = datetime.now(UTC)
-    for item in worklist:
-        if item.approval_request_id is None:
-            continue
-        amount = item.amount
-        role = AR.CFO if amount.minor_units >= 100_000_000 else AR.TREASURER
-        route = ApprovalRoute(
-            route_id=f"route-{item.seq}",
-            action_class=item.action.split(":", 1)[0],
-            lower_bound=Money.zero(amount.currency),
-            upper_bound=amount,
-            responsible=ApprovalRole.ANALYST,
-            reviewer=ApprovalRole.TREASURER,
-            accountable=role,
+    async def _compose(self, dispatch: Dispatch, resolved: list[ResolvedConflict]) -> Composition:
+        return compose(
+            dispatch.findings,
+            policy=await self._toolset.get_policy_constraints(),
+            candidates=await self._toolset.rank_deferral_candidates(),
+            position=await self._toolset.get_liquidity_position(),
+            conflicts=resolved,
         )
-        requests.append(
-            ApprovalRequest(
-                request_id=item.approval_request_id,
-                worklist_seq=item.seq,
-                recommendation_id=recommendation.recommendation_id,
-                action=item.action,
-                amount=amount,
-                expected_impact=f"Expected cash impact {item.expected_cash_impact or amount}",
-                risk="Counterparty or financing risk if the action lands late or is reversed",
-                evidence=list(item.evidence),
-                why_recommended=recommendation.summary or recommendation.selected_strategy.name,
-                what_could_go_wrong="Recovery or float may under-deliver under the stressed case",
-                approval_required=role,
-                route=route,
-                prepared_by=prepared_by,
-                state=ApprovalState.PENDING,
-                created_at=now,
-                data_snapshot_ref=recommendation.investigation_id,
+
+    # --- stress and replan ---------------------------------------------------------------
+
+    async def _stress_and_replan(
+        self, composition: Composition, incident: Incident | None
+    ) -> tuple[Strategy | None, list[StressReport], list[ReplanAttempt], list[str]]:
+        """Test the best bundle; on failure, tighten and try the next that could survive."""
+        position = await self._toolset.get_liquidity_position()
+        tester = StressTester(
+            provider=self._provider,
+            toolset=self._toolset,
+            routing=self._routing,
+            bus=self._bus,
+            company=self._company,
+            as_of=str(self._as_of),
+            investigation_id=self.investigation_id,
+            incident=incident,
+        )
+
+        candidates = composition.ranked()
+        reports: list[StressReport] = []
+        attempts: list[ReplanAttempt] = []
+        degradations: list[str] = []
+
+        for attempt, strategy in enumerate(candidates[: self._max_replans + 1], start=1):
+            if self._out_of_time():
+                degradations.append(
+                    f"wall clock: the investigation stopped after {self._elapsed_ms()}ms "
+                    f"with {len(candidates) - attempt + 1} bundle(s) untested"
+                )
+                break
+
+            report = await tester.run(strategy, position=position)
+            reports.append(report)
+            if not report.model_selected:
+                degradations.append(f"stress selection: {report.fallback_reason}")
+            if report.passed:
+                return strategy, reports, attempts, degradations
+
+            failure = report.failure_reason()
+            worst = report.worst()
+            attempts.append(
+                ReplanAttempt(
+                    attempt=attempt,
+                    strategy_id=strategy.strategy_id,
+                    failure_reason=failure[:400],
+                    tightened_constraint=(
+                        f"the bundle must clear {position.floor} under "
+                        f"{worst.stressor.label} ({worst.stressor.shift_pct}%)"
+                        if worst is not None
+                        else None
+                    ),
+                )
             )
+            self._bus.emit(
+                ReplanStarted,
+                investigation_id=self.investigation_id,
+                status_line=f"Replan {attempt}: {strategy.name} failed stress"[:200],
+                attempt=attempts[-1],
+            )
+            self._phase(InvestigationPhase.REPLANNING, depth=attempt)
+
+        if not reports:
+            degradations.append("no feasible bundle survived the constraint gate")
+        elif attempts:
+            degradations.append(
+                f"no bundle passed stress after {len(attempts)} attempt(s); "
+                "the shortfall is larger than the levers available"
+            )
+        return None, reports, attempts, degradations
+
+    # --- the answer -----------------------------------------------------------------------
+
+    def _recommend(
+        self,
+        dispatch: Dispatch,
+        composition: Composition,
+        selected: Strategy | None,
+        reports: list[StressReport],
+        attempts: list[ReplanAttempt],
+        degradations: list[str],
+    ) -> Recommendation:
+        ranked = composition.ranked()
+        chosen = selected or (ranked[0] if ranked else None)
+        results: list[StressResult] = [r for report in reports for r in report.results]
+
+        if chosen is None:
+            reason = (
+                "No bundle survived the constraint gate, so there is nothing to recommend. "
+                "Every proposed lever was refused; the refusals and their evidence are below."
+            )
+            self._bus.emit(
+                SystemDegraded,
+                investigation_id=self.investigation_id,
+                mark=StatusMark.FAIL,
+                status_line="no recommendable bundle",
+                component="investigation",
+                reason=reason[:400],
+            )
+            return Recommendation(
+                recommendation_id=f"rec-{self.investigation_id}",
+                investigation_id=self.investigation_id,
+                selected_strategy=_empty_strategy(composition.shortfall),
+                rejected_actions=composition.rejected,
+                stress_results=results,
+                replan_history=attempts,
+                degraded=True,
+                degradation_reason=reason,
+                requires_human_review=True,
+                summary=reason,
+            )
+
+        degraded = bool(degradations) or selected is None
+        reason = "; ".join(degradations)[:400] if degradations else ""
+        if selected is None and not reason:
+            reason = "no bundle passed stress; the highest-scoring one is shown for review"
+        elif selected is None:
+            reason = f"{reason}; no bundle passed stress"[:400]
+
+        return Recommendation(
+            recommendation_id=f"rec-{self.investigation_id}",
+            investigation_id=self.investigation_id,
+            selected_strategy=chosen,
+            alternatives=[s for s in composition.strategies if s.strategy_id != chosen.strategy_id],
+            worklist=to_worklist(
+                chosen,
+                as_of=self._as_of,
+                findings=dispatch.findings,
+                candidates=composition.candidates,
+            ),
+            rejected_actions=composition.rejected,
+            stress_results=results,
+            replan_history=attempts,
+            degraded=degraded,
+            degradation_reason=reason or None,
+            requires_human_review=degraded,
+            summary=_summarise(chosen, composition, attempts, selected is not None),
         )
-    return requests
+
+
+def _quantum(breach: ConstraintViolation) -> Money | None:
+    return breach.observed_money
+
+
+def _empty_strategy(shortfall: Money) -> Strategy:
+    """`Recommendation` requires a strategy; an empty one says exactly what happened."""
+    return Strategy(
+        strategy_id="none-feasible",
+        name="No feasible bundle",
+        actions=[
+            ProposedAction(
+                kind=ActionKind.ASSUMPTION_REVIEW,
+                rationale=(
+                    f"Every proposed lever was refused by the constraint gate, leaving the "
+                    f"{shortfall} shortfall unaddressed. This needs a human decision, not "
+                    f"another bundle."
+                ),
+            )
+        ],
+        net_cash_impact=Money.zero(shortfall.currency),
+    )
+
+
+def _summarise(
+    strategy: Strategy,
+    composition: Composition,
+    attempts: list[ReplanAttempt],
+    passed_stress: bool,
+) -> str:
+    parts = [
+        f"{strategy.name} raises {strategy.net_cash_impact} against a "
+        f"{composition.shortfall} shortfall, scoring "
+        f"{composition.scores[strategy.strategy_id].total} of 100."
+    ]
+    if attempts:
+        parts.append(
+            f"{len(attempts)} earlier bundle(s) failed stress and were replanned: "
+            + "; ".join(f"{a.strategy_id} -- {a.failure_reason}" for a in attempts)
+        )
+    parts.append(
+        "It survives every stressor it was tested against."
+        if passed_stress
+        else "It has not survived stress testing and is shown for human review only."
+    )
+    if composition.rejected:
+        parts.append(f"{len(composition.rejected)} lever(s) were refused, with reasons below.")
+    return " ".join(parts)[:1000]

@@ -1,7 +1,17 @@
-"""One-command demo: seed spine + Monday cycle war room golden path.
+"""The golden path, narrated.
 
-Person 1 spine (seed → shock → liquidity numbers) plus Person 2 escalation
-(cycle → investigation → stress fail → replan → recommendation).
+    python -m scripts.demo
+    python -m scripts.demo --break-llm      # the same Monday with no model available
+
+Runs the real product -- the same `Session` the API serves -- and prints what it did. It
+is a demo script rather than a script that fakes a demo: nothing here computes a figure,
+chooses a plan or decides an approval. Everything printed came out of the orchestrator,
+and if the orchestrator stops producing it this script prints less rather than pretending.
+
+`--break-llm` exists because the interesting question about an agentic system is not what
+it does when the model answers. Run it and the cycle still publishes, the war room still
+opens on the same breach, the Commander still picks a named plan, and every one of those
+falls back deterministically and says so. That is the demo worth giving.
 """
 
 from __future__ import annotations
@@ -9,157 +19,184 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
-import sys
+import shutil
+import tempfile
 from pathlib import Path
 
-from sqlalchemy import event
-from sqlmodel import Session, SQLModel, create_engine, select
-
 from backend.agents.fake import FakeProvider
-from backend.agents.routing import load_routing
-from backend.models import Company, ForecastVersion
-from backend.orchestrator.bus import EventBus
-from backend.orchestrator.weekly_cycle import run_monday_cycle
-from backend.seed.generator import SeedConfig, seed
-from backend.seed.shocks import SHOCKS, apply
-from backend.tools.engine import EngineToolset
-from backend.tools.fixtures import FixtureToolset
+from backend.api.session import Session
+from backend.contracts import AgentRole
+from backend.contracts.approvals import ApprovalDecision, ApprovalRole
+from backend.orchestrator.cycle import CYCLE_STEPS
+
+RECORDINGS = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "llm"
+
+TREASURER = "treasurer@novatech"
+CFO = "cfo@novatech"
+
+RULE = "─" * 78
 
 
-def _engine(url: str):
-    engine = create_engine(url)
-    if url.startswith("sqlite"):
-
-        @event.listens_for(engine, "connect")
-        def _fk(connection, _record):  # type: ignore[no-untyped-def]
-            connection.execute("PRAGMA foreign_keys=ON")
-
-        SQLModel.metadata.drop_all(engine)
-        SQLModel.metadata.create_all(engine)
-    return engine
+def head(title: str) -> None:
+    print(f"\n{RULE}\n  {title}\n{RULE}")
 
 
-async def run_spine(*, seed_value: int, db_url: str, shock: bool) -> dict[str, object]:
-    engine = _engine(db_url)
+def line(mark: str, text: str) -> None:
+    print(f"  {mark} {text}")
+
+
+def blackout_provider(root: Path) -> FakeProvider:
+    """Every recording replaced by an injected timeout."""
+    shutil.copytree(RECORDINGS, root, ignore=shutil.ignore_patterns("_*", "__*"))
+    for role in AgentRole:
+        payload = [{"agent": role.value, "default": True, "raises": "timeout"}]
+        (root / f"{role.value}.json").write_text(json.dumps(payload), encoding="utf-8")
+    return FakeProvider(root)
+
+
+async def demo(session: Session) -> None:
+    head("1-7  The Monday cycle")
+    cycle = await session.run_cycle()
+    for step in cycle.steps_completed:
+        line("✓", step)
+    line("•", f"version {cycle.forecast_version_id}, as of {cycle.as_of}")
+    print()
+    for row in cycle.bridge:
+        if not row.material:
+            continue
+        mark = "✓" if row.explanation else "⚠"
+        line(mark, f"{row.category}: {row.delta} — {row.explanation or row.unexplained_reason}")
+    line("•", f"immaterial rows: {cycle.immaterial_basis}")
+    if cycle.degraded:
+        print()
+        for reason in cycle.degradation_reasons:
+            line("⚠", reason)
+
+    head("8-9  Review, then publish")
+    line("•", f"steps 8 and 9 are the human's; {CYCLE_STEPS[7]} happens off this screen")
+    published = session.publish(published_by=TREASURER, published_by_role=ApprovalRole.TREASURER)
+    line("✓", f"{published.version_id} published by {published.published_by}")
+    line("•", f"prepared by {published.prepared_by} — preparer is never publisher")
+
+    head("10  Policy check")
+    check = await session.check_policy()
+    for violation in check.violations:
+        line("✗" if violation.severity.value == "hard" else "⚠", violation.display())
+    if not check.escalate:
+        line("✓", "within policy — no war room today")
+        return
+
+    head("The war room")
+    investigation = await session.open_war_room()
+    line("•", f"plan: {investigation.plan_id} — {investigation.plan_rationale}")
+    for skip in ():  # plan skips travel on the event, not the result
+        line("•", str(skip))
+    for run in investigation.runs:
+        mark = "✓" if run.status.value == "complete" else "⚠"
+        line(mark, f"{run.agent.value}: {run.finding.headline if run.finding else run.status.value}")
+
+    if investigation.conflicts:
+        print()
+        for conflict_id in investigation.conflicts:
+            line("⚠", f"conflict {conflict_id} — detected deterministically, resolved by evidence")
+
+    recommendation = investigation.recommendation
+    if recommendation is None:
+        line("✗", "the investigation produced no recommendation")
+        return
+
+    if recommendation.replan_history:
+        print()
+        for attempt in recommendation.replan_history:
+            line("↻", f"attempt {attempt.attempt} ({attempt.strategy_id}): {attempt.failure_reason}")
+
+    head("The worklist")
+    for item in recommendation.worklist:
+        line(
+            "•",
+            f"{item.seq}. {item.action} — {item.owner}, {item.amount}, due {item.due_date}",
+        )
+
+    if recommendation.rejected_actions:
+        print()
+        for rejection in recommendation.rejected_actions:
+            line("✗", f"refused by {rejection.rejected_by}: {rejection.reason}")
+
+    head("Stress")
+    for result in recommendation.stress_results:
+        mark = "✓" if result.passed else "✗"
+        line(
+            mark,
+            f"{result.strategy_id} under {result.stressor.label} "
+            f"({result.stressor.shift_pct}%): {result.min_cash} at W{result.min_cash_week}",
+        )
+    print()
+    for stressor in {r.stressor.stressor_id: r.stressor for r in recommendation.stress_results}.values():
+        line("•", f"{stressor.label}: {stressor.calibration}")
+
+    head("Approvals")
+    pack = await session.approval_pack()
+    for request in pack.requests:
+        print()
+        for field, value in request.card().items():
+            print(f"  {field:<20} {value}")
+
+    if not pack.requests:
+        line("•", "nothing needed a signature")
+        return
+
+    print()
+    request = pack.requests[0]
+    role = request.approval_required
+    signer = CFO if role is ApprovalRole.CFO else TREASURER
+
     try:
-        with Session(engine) as session:
-            result = seed(session, SeedConfig(seed=seed_value))
-            if shock:
-                for name in sorted(SHOCKS):
-                    apply(session, name, result.company_id)
-            session.commit()
+        session.decide(
+            ApprovalDecision(
+                request_id=request.request_id,
+                decided_by=session.prepared_by,  # the preparer, deliberately
+                decided_by_role=role,
+                approved=True,
+                decided_at=published.published_at,
+            )
+        )
+    except Exception as exc:
+        line("✗", f"preparer tried to sign their own card: {exc}")
 
-            tools = EngineToolset(session, tenant_id=result.tenant_id)
-            liquidity = await tools.get_liquidity_position()
-            forecast = await tools.get_forecast_summary()
-            covenants = await tools.get_covenant_status()
-            company = session.get(Company, result.company_id)
-            versions = session.exec(
-                select(ForecastVersion).where(ForecastVersion.company_id == result.company_id)
-            ).all()
-            return {
-                "seed": seed_value,
-                "company_id": result.company_id,
-                "company": None if company is None else company.name,
-                "forecast_versions": len(versions),
-                "shock_applied": shock,
-                "cash_today_minor": liquidity.cash_today.minor_units,
-                "min_cash_minor": liquidity.min_cash.minor_units,
-                "min_cash_week": liquidity.min_cash_week,
-                "floor_minor": liquidity.floor.minor_units,
-                "breaches_floor": liquidity.breaches_floor,
-                "covenant_breaches": [row.label for row in covenants.covenants if row.breached],
-                "forecast_weeks": len(forecast.weeks),
-            }
-    finally:
-        engine.dispose()
-
-
-async def run_war_room() -> dict[str, object]:
-    """Deterministic agentic path against FixtureToolset + FakeProvider."""
-    bus = EventBus()
-    result = await run_monday_cycle(
-        tools=FixtureToolset(),
-        bus=bus,
-        provider=FakeProvider(strict=True),
-        routing=load_routing(),
+    entry = session.decide(
+        ApprovalDecision(
+            request_id=request.request_id,
+            decided_by=signer,
+            decided_by_role=role,
+            approved=True,
+            decided_at=published.published_at,
+        )
     )
-    inv = result.investigation
-    assert inv is not None and inv.recommendation is not None
-    rec = inv.recommendation
-    return {
-        "breached": result.breach is not None,
-        "investigation_id": inv.investigation_id,
-        "plan_id": inv.plan_id,
-        "finding_agents": sorted(f.agent.value for f in inv.findings),
-        "replan_count": len(inv.replan_history),
-        "selected_strategy_id": rec.selected_strategy.strategy_id,
-        "selected_strategy_name": rec.selected_strategy.name,
-        "rejected_documents": sorted(
-            a.action.document_ref for a in rec.rejected_actions if a.action.document_ref is not None
-        ),
-        "worklist_rows": len(rec.worklist),
-        "approvals": len(inv.approvals),
-        "event_count": bus.seq,
-        "recommendation_id": rec.recommendation_id,
-    }
+    line("✓", f"signed by {entry.actor} ({entry.actor_role.value}) against {entry.data_snapshot_ref}")
+
+    row = next(r for r in pack.worklist if r.seq == request.worklist_seq)
+    line("•", await session.execute(row.seq))
 
 
-async def run_demo(*, seed_value: int, db_url: str, shock: bool) -> dict[str, object]:
-    """Person 1 spine only — kept for golden-file byte stability in tests."""
-    return await run_spine(seed_value=seed_value, db_url=db_url, shock=shock)
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="WAR ROOM golden-path demo")
-    parser.add_argument("--seed", type=int, default=int(os.environ.get("SEED", "42")))
+async def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--db",
-        default=os.environ.get("DATABASE_URL", "sqlite:///warroom-demo.db"),
-    )
-    parser.add_argument("--no-shock", action="store_true")
-    parser.add_argument(
-        "--spine-only",
+        "--break-llm",
         action="store_true",
-        help="Only run the Person 1 seed/shock spine (legacy golden file)",
+        help="inject a timeout into every model call and run the same Monday",
     )
-    parser.add_argument(
-        "--golden",
-        type=Path,
-        default=None,
-        help="Write or compare against a golden JSON file (spine numbers)",
-    )
-    parser.add_argument(
-        "--update-golden",
-        action="store_true",
-        help="Rewrite the golden file instead of comparing",
-    )
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
-    spine = asyncio.run(run_spine(seed_value=args.seed, db_url=args.db, shock=not args.no_shock))
-    narrative: dict[str, object] = {"spine": spine}
-    if not args.spine_only:
-        narrative["war_room"] = asyncio.run(run_war_room())
+    if args.break_llm:
+        with tempfile.TemporaryDirectory() as tmp:
+            provider = blackout_provider(Path(tmp) / "llm")
+            print("\n  Running with every model call timing out.")
+            await demo(Session(provider=provider))
+    else:
+        await demo(Session())
 
-    # Legacy golden file compares the spine block alone when --spine-only, else full narrative
-    # stays printable; golden comparison remains on the Person 1 spine for byte-stability.
-    rendered_spine = json.dumps(spine, indent=2, sort_keys=True) + "\n"
-    rendered_full = json.dumps(narrative, indent=2, sort_keys=True) + "\n"
-    sys.stdout.write(rendered_full)
-
-    if args.golden is not None:
-        payload = rendered_spine
-        if args.update_golden or not args.golden.exists():
-            args.golden.parent.mkdir(parents=True, exist_ok=True)
-            args.golden.write_text(payload, encoding="utf-8")
-        else:
-            expected = args.golden.read_text(encoding="utf-8")
-            if expected != payload:
-                sys.stderr.write("demo spine output drifted from golden file\n")
-                return 1
-    return 0
+    print()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    asyncio.run(main())

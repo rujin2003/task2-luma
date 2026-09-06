@@ -84,8 +84,8 @@ export function MissingRow({
       </p>
       <p className="mt-1 font-mono text-xs break-all text-ink-3">{reference}</p>
       <p className="mt-1.5 text-xs text-ink-2">
-        Nothing downstream of this reference can be relied on. A finding citing it would
-        have been rejected before it reached a screen.
+        Nothing downstream of this reference can be relied on. A finding citing it would have been
+        rejected before it reached a screen.
       </p>
     </article>
   );

@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 
-import { allEvidence, dependents, parseReference, provenanceChain, searchEvidence } from "@/lib/evidence";
+import {
+  allEvidence,
+  dependents,
+  parseReference,
+  provenanceChain,
+  searchEvidence,
+} from "@/lib/evidence";
 
 import { EvidenceRow, MissingRow } from "./EvidenceRow";
 import { Panel } from "../primitives";
@@ -73,8 +79,8 @@ export function EvidenceExplorer() {
             })}
             {results.length === 0 ? (
               <li className="px-4 py-6 text-xs text-ink-3">
-                Nothing matches. A reference with no row is either a fixture gap or a
-                fabrication -- both worth knowing about.
+                Nothing matches. A reference with no row is either a fixture gap or a fabrication --
+                both worth knowing about.
               </li>
             ) : null}
           </ul>
@@ -93,9 +99,7 @@ export function EvidenceExplorer() {
                 Computed from ({underneath.length})
               </h3>
               {underneath.length === 0 ? (
-                <p className="mt-2 text-xs text-ink-2">
-                  A source row -- the bottom of the chain.
-                </p>
+                <p className="mt-2 text-xs text-ink-2">A source row -- the bottom of the chain.</p>
               ) : (
                 <ul className="mt-2 flex flex-col gap-2">
                   {underneath.map((node) => (

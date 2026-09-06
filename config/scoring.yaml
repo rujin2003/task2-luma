@@ -1,0 +1,33 @@
+# Multi-objective weights for scoring candidate strategies.
+#
+# These are surfaced in the Recommendation screen next to the score they produced. A
+# hidden weight vector is an unauditable recommendation: a treasurer who cannot see that
+# supplier disruption was weighted at 15 has no way to disagree with the ranking, and
+# "the system chose this one" is not an answer they can take to a board.
+#
+# Weights are relative, not percentages -- they are normalised against their own total, so
+# adding an objective does not silently rescale the others.
+version: 1
+
+weights:
+  # Does the bundle actually close the breach? Nothing else matters if it does not.
+  shortfall_closed: 40
+  # How much of the revolver it burns. Undrawn capacity is optionality, and spending it
+  # to fix a timing problem leaves nothing for a real one.
+  financing_load: 15
+  # Stretching a sole-source supplier is cheap this week and expensive in six.
+  supplier_disruption: 15
+  # Chasing a disputed invoice hard is a collection today and a renewal risk next year.
+  customer_relationship: 10
+  # Distance from the utilization ceiling after the bundle executes.
+  covenant_headroom: 10
+  # Rows a human has to actually execute, and how many places it can go wrong.
+  operational_risk: 10
+
+# Objectives from the spec that this tenant's data cannot support, and why. Scoring a
+# dimension we cannot observe would be inventing a number, so they are named instead --
+# the same rule the policy check follows for constraints it cannot evaluate.
+unscored:
+  fx_exposure: >-
+    NovaTech's position is single-currency; there is no non-USD exposure for a bundle to
+    change. Re-enable this when a tenant with FX exposure is onboarded.

@@ -1,0 +1,106 @@
+# Delegation of authority. `WORKFLOW.md` §9, as data rather than as an if-statement.
+#
+# Bands are half-open on the amount in minor units: `lower <= amount < upper`, with a
+# missing `upper` meaning unbounded. `backend/finance/controls.py::route_approval` rejects
+# an amount that matches two bands, so an editing mistake here fails loudly at routing time
+# rather than quietly approving something at the lower of two levels.
+#
+# R = responsible (prepares), reviewer = second pair of eyes, A = accountable (signs).
+# Preparer, reviewer and approver must be three different people; that is enforced in code
+# and is not configurable, because it is the control the whole matrix rests on.
+version: 1
+
+routes:
+  # Dunning and collection calls are reversible, cost nothing, and touch no cash directly.
+  - route_id: collection-call
+    action_class: collection_call
+    responsible: analyst
+    accountable: analyst
+
+  - route_id: dispute-resolution
+    action_class: dispute_resolution
+    responsible: analyst
+    accountable: treasurer
+
+  - route_id: dodo-retry
+    action_class: dodo_retry
+    responsible: analyst
+    accountable: analyst
+
+  - route_id: dodo-dunning
+    action_class: dodo_dunning
+    responsible: analyst
+    accountable: analyst
+
+  # An early-pay discount is a real cost of capital. The table bands it on the discount
+  # rate, not the amount: 2% for 20 days is roughly 36% annualised, and a treasurer should
+  # be the one who agrees to that.
+  - route_id: early-pay-cheap
+    action_class: early_pay_discount_le_2pct
+    responsible: analyst
+    accountable: treasurer
+
+  - route_id: early-pay-expensive
+    action_class: early_pay_discount_gt_2pct
+    responsible: analyst
+    reviewer: treasurer
+    accountable: cfo
+
+  # AP deferral, banded by amount exactly as the table has it.
+  - route_id: ap-defer-small
+    action_class: ap_defer
+    upper_bound: { minor_units: 25000000, currency: USD } # < $250K
+    responsible: analyst
+    accountable: treasurer
+
+  - route_id: ap-defer-medium
+    action_class: ap_defer
+    lower_bound: { minor_units: 25000000, currency: USD }
+    upper_bound: { minor_units: 100000000, currency: USD } # $250K - $1M
+    responsible: analyst
+    reviewer: treasurer
+    accountable: cfo
+
+  - route_id: ap-defer-large
+    action_class: ap_defer
+    lower_bound: { minor_units: 100000000, currency: USD } # > $1M
+    responsible: analyst
+    reviewer: treasurer
+    accountable: cfo
+    informed: [board]
+
+  - route_id: ap-accelerate
+    action_class: ap_accelerate
+    responsible: analyst
+    accountable: treasurer
+
+  # A draw is the least reversible thing on the list and the only one a lender sees.
+  - route_id: revolver-small
+    action_class: revolver_draw
+    upper_bound: { minor_units: 200000000, currency: USD } # <= $2M
+    responsible: analyst
+    reviewer: treasurer
+    accountable: cfo
+
+  - route_id: revolver-large
+    action_class: revolver_draw
+    lower_bound: { minor_units: 200000000, currency: USD } # > $2M
+    responsible: analyst
+    reviewer: treasurer
+    accountable: board
+
+  - route_id: assumption-review
+    action_class: assumption_review
+    responsible: analyst
+    accountable: treasurer
+
+  # Not a band with a high approver: a blocked route has no approver at all. Anything
+  # touching payroll or statutory tax is a policy constraint, and a policy constraint that
+  # a sufficiently senior person can wave through is not a constraint.
+  - route_id: protected-class
+    action_class: protected_payment_class
+    responsible: analyst
+    blocked: true
+    blocked_reason: >-
+      Payroll and statutory tax are protected payment classes under the treasury policy.
+      No delegation level can authorise delaying them.

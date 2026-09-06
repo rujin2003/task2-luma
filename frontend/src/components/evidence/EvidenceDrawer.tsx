@@ -111,8 +111,8 @@ export function EvidenceDrawer({
           ) : null}
 
           <p className="border-t border-line pt-3 text-xs text-ink-3">
-            Synthetic ledger. Provenance is `(source, record, field, as of)`; the engine
-            replaces these rows behind the same references at Merge Point 1.
+            Synthetic ledger. Provenance is `(source, record, field, as of)`; the engine replaces
+            these rows behind the same references at Merge Point 1.
           </p>
         </div>
       </aside>

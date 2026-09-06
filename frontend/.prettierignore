@@ -1,0 +1,13 @@
+# Generated files. Their formatting is the generator's, not Prettier's.
+#
+# `evidence.ts` is emitted by `npm run gen:evidence` as a JSON literal, and
+# `tests/unit/test_evidence_fixture_parity.py` parses that literal with a JSON
+# parser to compare it against the ledger. Letting Prettier restyle it strips the
+# quotes from the keys and adds trailing commas, which is valid TypeScript and
+# not valid JSON, so the parity check stops being able to read the thing it
+# exists to check.
+src/fixtures/evidence.ts
+
+# Recorded from the golden path by `python -m scripts.export_frontend_fixtures`,
+# and compared byte for byte by `tests/unit/test_frontend_fixture_parity.py`.
+src/fixtures/*.json
