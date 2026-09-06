@@ -170,11 +170,6 @@ export function AgentGraph({
               >
                 {status ? STATUS_MARK[status] : "○"}
               </text>
-              {card.missing_sources.length > 0 ? (
-                <text x={NODE_W - 12} y={48} textAnchor="end" className="fill-warning text-[9px]">
-                  no {card.missing_sources.join("/")}
-                </text>
-              ) : null}
             </g>
           );
         })}

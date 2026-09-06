@@ -132,3 +132,40 @@ async def test_gemini_provider_rejects_invalid_json() -> None:
         provider = GeminiProvider("test-key", client=client)
         with pytest.raises(SchemaViolation):
             await provider.complete(_request(), AgentFinding, timeout_s=30)
+
+
+async def test_complete_without_evidence_is_coerced_to_degraded() -> None:
+    """Gemini cannot encode 'complete requires evidence' in responseSchema, so it
+    sometimes returns complete with an empty list. That is degraded, not a hard fail."""
+
+    finding = {
+        "agent": "ar_collections",
+        "status": "complete",
+        "headline": "$1.2M expected against open AR",
+        "detail": "Ranked on the empirical curve; the open total is uncollectible.",
+        "evidence": [],
+        "confidence": {"basis": "qualitative", "band": "medium", "rationale": "tenant curve"},
+        "risks": [],
+        "recommended_actions": [],
+        "rejects": [],
+        "requires_followup": False,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [{"content": {"parts": [{"text": json.dumps(finding)}]}}],
+                "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 20},
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        provider = GeminiProvider("test-key", client=client)
+        output, _ = await provider.complete(
+            _request(agent=AgentRole.AR_COLLECTIONS), AgentFinding, timeout_s=30
+        )
+
+    assert output.status.value == "degraded"
+    assert "without citations" in output.detail

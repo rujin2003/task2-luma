@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,7 +11,7 @@ import { getDataSource, type DataSourceStatus } from "@/lib/position";
  * It is not decoration. This product renders a tenant's real financial position and a
  * recorded synthetic one through exactly the same components, and the only thing standing
  * between those two on a screenshot is this line — so it states the source, its kind and
- * its as-of date on every page, and says plainly when nothing is loaded at all.
+ * its as-of date on every page when a source is loaded.
  *
  * Re-read on navigation rather than polled: the things that change it (an onboarding load,
  * a reset) are all followed by a navigation or a reload in this app.
@@ -30,15 +29,7 @@ export function SourceHeader() {
   const source = status?.source;
 
   if (!source) {
-    return (
-      <div className="bg-surface-2 px-4 py-1 text-center text-xs text-ink-2">
-        No data source loaded —{" "}
-        <Link href="/onboarding" className="text-accent underline-offset-2 hover:underline">
-          load a tenant database
-        </Link>{" "}
-        to fill these screens.
-      </div>
-    );
+    return null;
   }
 
   if (source.kind === "demo") {

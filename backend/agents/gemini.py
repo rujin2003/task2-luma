@@ -8,6 +8,7 @@ leaves this module. A schema-invalid reply is a `SchemaViolation`, never silent 
 from __future__ import annotations
 
 import copy
+import json
 import os
 from typing import Any
 
@@ -15,7 +16,8 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from backend.agents.provider import LLMError, LLMRequest, LLMTimeout, SchemaViolation
-from backend.contracts.agent import TokenUsage
+from backend.agents.schema_repair import repair_finding_payload
+from backend.contracts.agent import AgentFinding, TokenUsage
 
 DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 _TYPE_MAP = {
@@ -199,8 +201,12 @@ class GeminiProvider:
             )
 
         try:
-            output = schema.model_validate_json(text)
-        except ValidationError as exc:
+            if schema is AgentFinding:
+                data = repair_finding_payload(json.loads(text))
+                output = schema.model_validate(data)
+            else:
+                output = schema.model_validate_json(text)
+        except (json.JSONDecodeError, ValidationError, TypeError) as exc:
             # A truncated reply fails as "invalid JSON at line N", which sends whoever
             # reads it hunting for a schema bug that is not there. The finish reason is
             # the actual diagnosis, so say it: the cap is too small for the contract.
