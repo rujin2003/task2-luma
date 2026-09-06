@@ -76,7 +76,9 @@ def install(app: FastAPI) -> None:
         it is the same class of problem as a bad body: 422, with the field that objected.
         """
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            # 422 written as a literal: Starlette renamed the constant, and the
+            # deprecated alias raises under the suite's warnings-as-errors setting.
+            status_code=422,
             content=jsonable_encoder({"error": "invalid", "detail": exc.errors(include_url=False)}),
         )
 

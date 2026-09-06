@@ -1,30 +1,42 @@
 # Per-role model routing. Swapping providers, or upgrading one role to a stronger model,
 # is a change to this file and nothing else.
 #
-# !! UNVERIFIED MODEL IDS !!
-# LLM_STRATEGY.md section 1 flags `gemini-3.1-flash` as apparently superseded. Run the
-# models-list curl in that section, record the real ids, context windows and
-# function-calling support there, and then correct the values below. Also confirm the
-# free-tier retention and training terms before any tenant ledger data reaches the API --
-# for a treasury product that is a procurement blocker, not a preference.
+# Verified 2026-09-06 against generativelanguage.googleapis.com/v1beta/models:
+#   gemini-3.8-flash        — default specialists (1M context, generateContent)
+#   gemini-3.1-pro-preview  — Commander + conflict resolution (2.5-pro closed to new keys)
+# See docs/LLM_STRATEGY.md §1. Confirm free-tier retention/training terms before any
+# tenant ledger data reaches the API — procurement blocker for a treasury product.
 version: 1
 
 defaults:
   provider: gemini
-  model: gemini-3.7-flash
+  model: gemini-3.8-flash
+  max_output_tokens: 2500
   temperature: 0 # determinism first; this is a financial system
-  timeout_s: 30.0
+  timeout_s: 45.0
   max_attempts: 2
 
 # LLM_STRATEGY.md section 4. Enforced per role, logged on AgentRun, asserted in CI so a
 # prompt change that doubles context fails the build.
+#
+# The output allowance was 500 and was measured wrong. A complete AgentFinding carries a
+# confidence block, evidence with excerpts, risks and recommended actions; against a
+# 500-token cap live Gemini truncated mid-string. Reported honestly as a schema
+# violation, but a failed agent all the same.
+#
+# 2500 is measured, not guessed: the six specialists run 175-1777 output tokens against
+# the fixture toolset on gemini-3.8-flash, so this is the observed ceiling plus headroom.
+# Input budgets are unchanged; this is not a licence for longer prompts.
 budgets:
   system_prompt: 800
   context_pack: 600
   findings_digest: 400
   tool_results: 1500
   total_input: 4000
-  output: 500
+  # Raised from 2500 when the toolset started reading real tenant ledgers: a finding that
+  # cites ten actual invoices is longer than one that cites three fixture rows, and a
+  # truncation reported honestly is still a failed agent.
+  output: 4000
 
 # Bounded concurrency and rate limiting for the parallel wave (section 5). A free tier
 # will throttle nine concurrent agents; "queued" is an honest status, not a failure.
@@ -38,8 +50,14 @@ executor:
 roles:
   forecast: {}
   variance: {}
-  ar_collections: {}
-  ap_optimization: {}
+
+  # The two ranking agents write one evidence line per ranked row, so their output scales
+  # with the size of the tenant's book rather than with the prompt. Measured against a
+  # loaded 50-invoice tenant, both truncated mid-JSON at 2000 and at 3200, and completed at 4000.
+  ar_collections:
+    max_output_tokens: 4000
+  ap_optimization:
+    max_output_tokens: 4000
   supplier_risk: {}
   dodo_revenue: {}
   stress_test: {}
@@ -50,7 +68,9 @@ roles:
   # enumerated investigation plans, decomposed conflict resolution -- come first; this
   # routing is available, and should be measured before it is paid for.
   commander:
-    model: gemini-3.7-pro
-    max_output_tokens: 700
+    model: gemini-3.1-pro-preview
+    max_output_tokens: 2500
+    timeout_s: 90.0
   conflict_resolution:
-    model: gemini-3.7-pro
+    model: gemini-3.1-pro-preview
+    timeout_s: 90.0

@@ -8,6 +8,7 @@
  * how a bad number reaches a board pack.
  */
 
+import { fetchJson } from "@/lib/api";
 import { EVIDENCE_ROWS } from "@/fixtures/evidence";
 
 export interface EvidenceRecord {
@@ -92,4 +93,39 @@ export function searchEvidence(query: string): EvidenceRecord[] {
       row.excerpt.toLowerCase().includes(needle) ||
       Object.values(row.fields).some((value) => value.toLowerCase().includes(needle)),
   );
+}
+
+/** One row as the backend resolves it against whatever source is currently loaded. */
+export interface ResolvedEvidence {
+  reference: string;
+  source: string;
+  excerpt: string;
+  fields: Record<string, string>;
+  resolved: boolean;
+  as_of: string | null;
+}
+
+/**
+ * Resolve a citation against the *loaded* ledger.
+ *
+ * The fixture map above is the recorded demo tenant and stays as the offline fallback, but
+ * a reference minted by an agent reading a customer's own database can only be resolved by
+ * the backend. An unresolvable reference comes back with `resolved: false` and a sentence
+ * saying so — it is drawn as a visible break in the chain, never as an empty panel.
+ */
+export async function resolveLive(reference: string): Promise<EvidenceRecord> {
+  const row = await fetchJson<ResolvedEvidence>(
+    `/api/evidence?reference=${encodeURIComponent(reference)}`,
+  );
+  return {
+    reference: row.reference,
+    source: row.source,
+    excerpt: row.excerpt,
+    as_of: row.as_of,
+    resolved: row.resolved,
+    fields: row.fields ?? {},
+    // The backend resolves one row at a time; the chain below a row is a fixture-only
+    // notion until the engine exposes derivation edges of its own.
+    derived_from: lookup(reference)?.derived_from ?? [],
+  };
 }

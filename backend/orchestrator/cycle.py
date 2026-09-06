@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
+from datetime import date, timedelta
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -207,8 +208,28 @@ class WeeklyCycle:
         position = await self._toolset.get_liquidity_position()
         done(1)
 
-        # 2. Build the variance bridge. The single most-used artifact of the cycle.
-        bridge = await self._toolset.get_variance_bridge()
+        # 2. Build the variance bridge. The single most-used artifact of the cycle -- and
+        #    the one thing a tenant onboarded this morning cannot have, because a bridge
+        #    compares a published forecast with what happened next and there is no prior
+        #    version to compare with. That is a stated gap, not a broken cycle: the rest of
+        #    Monday (drivers, reforecast, exceptions, the policy check) is unaffected, so
+        #    the cycle continues with an empty bridge and reports what it could not build.
+        try:
+            bridge = await self._toolset.get_variance_bridge()
+        except ToolError as exc:
+            degradations.append(f"variance bridge unavailable: {exc}")
+            self._bus.emit(
+                SystemDegraded,
+                mark=StatusMark.WARN,
+                status_line="variance bridge unavailable",
+                component="variance",
+                reason=str(exc)[:400],
+            )
+            bridge = VarianceBridge(
+                week_ending=_week_ending(self._as_of),
+                rows=[],
+                total_delta=Money.zero(position.cash_today.currency),
+            )
         done(2)
 
         # 3. Explain it -- the one model call in the automated half, and only for the
@@ -429,6 +450,12 @@ def _immaterial_basis(bridge: VarianceBridge) -> str:
     for row in immaterial[1:]:
         total = total + row.delta
     return f"{len(immaterial)} immaterial row(s), {total} net, below the materiality threshold"
+
+
+def _week_ending(as_of: str) -> date:
+    """The Sunday of the as-of week. An empty bridge still has to be dated to something."""
+    day = date.fromisoformat(as_of)
+    return day + timedelta(days=6 - day.weekday())
 
 
 def _surface_exceptions(

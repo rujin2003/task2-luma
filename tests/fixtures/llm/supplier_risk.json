@@ -1,7 +1,7 @@
 [
   {
     "agent": "supplier_risk",
-    "fingerprint": "31bc896646ed8537",
+    "fingerprint": "564c73521c9eda4d",
     "note": "Golden path: supplier_risk against the seeded W10 fixtures.",
     "output": {
       "agent": "supplier_risk",
@@ -29,13 +29,13 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 595,
+      "input_tokens": 726,
       "output_tokens": 207
     }
   },
   {
     "agent": "supplier_risk",
-    "fingerprint": "477215fdf97368ae",
+    "fingerprint": "49ab100a35403caa",
     "note": "Scoped follow-up: BILL-8841 only, so it may cite only the Acme row.",
     "output": {
       "agent": "supplier_risk",
@@ -58,13 +58,13 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 581,
+      "input_tokens": 712,
       "output_tokens": 182
     }
   },
   {
     "agent": "supplier_risk",
-    "fingerprint": "1cd04053c2542fa2",
+    "fingerprint": "9cced30e67771db8",
     "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
     "output": {
       "agent": "supplier_risk",
@@ -92,7 +92,7 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 784,
+      "input_tokens": 915,
       "output_tokens": 207
     }
   },

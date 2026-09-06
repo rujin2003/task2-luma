@@ -93,7 +93,9 @@ async def demo(session: Session) -> None:
         line("•", str(skip))
     for run in investigation.runs:
         mark = "✓" if run.status.value == "complete" else "⚠"
-        line(mark, f"{run.agent.value}: {run.finding.headline if run.finding else run.status.value}")
+        line(
+            mark, f"{run.agent.value}: {run.finding.headline if run.finding else run.status.value}"
+        )
 
     if investigation.conflicts:
         print()
@@ -108,7 +110,9 @@ async def demo(session: Session) -> None:
     if recommendation.replan_history:
         print()
         for attempt in recommendation.replan_history:
-            line("↻", f"attempt {attempt.attempt} ({attempt.strategy_id}): {attempt.failure_reason}")
+            line(
+                "↻", f"attempt {attempt.attempt} ({attempt.strategy_id}): {attempt.failure_reason}"
+            )
 
     head("The worklist")
     for item in recommendation.worklist:
@@ -131,7 +135,9 @@ async def demo(session: Session) -> None:
             f"({result.stressor.shift_pct}%): {result.min_cash} at W{result.min_cash_week}",
         )
     print()
-    for stressor in {r.stressor.stressor_id: r.stressor for r in recommendation.stress_results}.values():
+    for stressor in {
+        r.stressor.stressor_id: r.stressor for r in recommendation.stress_results
+    }.values():
         line("•", f"{stressor.label}: {stressor.calibration}")
 
     head("Approvals")
@@ -172,7 +178,9 @@ async def demo(session: Session) -> None:
             decided_at=published.published_at,
         )
     )
-    line("✓", f"signed by {entry.actor} ({entry.actor_role.value}) against {entry.data_snapshot_ref}")
+    line(
+        "✓", f"signed by {entry.actor} ({entry.actor_role.value}) against {entry.data_snapshot_ref}"
+    )
 
     row = next(r for r in pack.worklist if r.seq == request.worklist_seq)
     line("•", await session.execute(row.seq))

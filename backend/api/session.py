@@ -23,11 +23,18 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, date, datetime
+from typing import Literal
 
+from pydantic import BaseModel, Field
+
+from backend.agents.factory import build_provider
 from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMProvider
 from backend.agents.routing import ModelRouting, load_routing
 from backend.agents.runner import AgentRunner
+from backend.agents.specialists import SPECIALISTS
+from backend.agents.specialists import build as build_specialist
+from backend.contracts.agent import AgentRole, AgentRun, ProposedAction
 from backend.contracts.approvals import (
     ApprovalDecision,
     ApprovalRole,
@@ -66,6 +73,50 @@ AS_OF = "2026-03-02"
 PREPARED_BY = "analyst@novatech"
 
 
+class DataSource(BaseModel):
+    """What the screens are currently showing, and where it came from.
+
+    Every screen in this product is a view of one data source. Before a source is chosen
+    there is nothing to view -- not an empty NovaTech, not last week's numbers, nothing --
+    and the moment a new one is loaded the previous one's cycle, runs, investigation and
+    approval cards go with it. That rule is enforced in `bind_*` below rather than trusted
+    to whoever calls it, because a stale figure surviving an onboarding is exactly the kind
+    of bug that ends up in a board pack.
+    """
+
+    kind: Literal["tenant", "demo"]
+    tenant_id: str
+    company: str
+    currency: str
+    as_of: str
+    loaded_at: datetime
+    #: Rows per entity, read back from the target database rather than echoed from the load
+    #: report -- the report says what the loader believed it wrote.
+    counts: dict[str, int] = Field(default_factory=dict)
+    mapping_path: str | None = None
+    reconciled: bool | None = None
+    #: Sources this tenant actually has, and the ones it does not, with the reason.
+    available_sources: list[str] = Field(default_factory=list)
+    missing_sources: list[str] = Field(default_factory=list)
+    source_notes: dict[str, str] = Field(default_factory=dict)
+    note: str = ""
+
+
+DEMO_SOURCE = DataSource(
+    kind="demo",
+    tenant_id="novatech",
+    company=COMPANY,
+    currency="USD",
+    as_of=AS_OF,
+    loaded_at=datetime(2026, 3, 2, tzinfo=UTC),
+    note=(
+        "Recorded NovaTech demo ledger. Synthetic, deterministic, and the fixture the "
+        "golden path is asserted against — not a tenant's data."
+    ),
+    available_sources=["ar_ledger", "ap_ledger", "bank", "dodo", "debt", "forecast", "policy"],
+)
+
+
 class SequenceError(RuntimeError):
     """A step was asked for out of order. The message says which step is missing."""
 
@@ -83,12 +134,18 @@ class Session:
         as_of: str = AS_OF,
         prepared_by: str = PREPARED_BY,
         app_version: str = APP_VERSION,
+        data_source: DataSource | None = DEMO_SOURCE,
     ) -> None:
         self.company = company
         self.as_of = as_of
         self.prepared_by = prepared_by
+        # `None` means "no source is loaded"; every screen renders its empty state and the
+        # agent roster refuses to start anything. See `bind_tenant` / `bind_demo`.
+        self.data_source = data_source
 
         self.toolset: Toolset = toolset or FixtureToolset()
+        # Constructors and tests stay on fixtures. The API process opts into Gemini via
+        # get_session() -> build_provider(), never by silently reaching the network here.
         self.provider: LLMProvider = provider or FakeProvider()
         self.routing = routing or load_routing()
         self.bus = EventBus()
@@ -106,16 +163,100 @@ class Session:
         self.investigation: InvestigationResult | None = None
         self.pack: ApprovalPack | None = None
 
+        # Runs an analyst started by hand, kept apart from the cycle's own runs so
+        # the Agents screen can show "what I started" without the wave drowning it.
+        self.manual_runs: list[AgentRun] = []
+        self._manual_seq = 0
+
         # Every mutating step runs under this. Two browser tabs both pressing "Run cycle"
         # is not a hypothetical, and a half-run cycle interleaved with a war room is a
         # much worse bug than a request that waits.
         self._lock = asyncio.Lock()
 
+    # --- running one agent on its own -------------------------------------------------
+
+    async def run_agent(self, role: AgentRole, *, task: str | None = None) -> AgentRun:
+        """Start a single specialist, outside the wave.
+
+        The weekly cycle and the war room decide for themselves which agents to run;
+        this is the other thing an analyst wants, which is to point one agent at the
+        current state and see what it says. It is the same runtime, the same tool
+        allowlist and the same evidence validator — only the trigger is different, so
+        an agent started by hand cannot cite something an agent started by the Commander
+        could not.
+
+        Supplier Risk is handed the live AP proposals when an investigation has produced
+        any, because an adversarial agent with nothing to be adversarial about returns a
+        true but useless answer.
+        """
+        async with self._lock:
+            self.require_data_source()
+            if role not in SPECIALISTS:
+                raise SequenceError(
+                    f"{role.value} is not a specialist that can be started on its own; "
+                    f"the Commander runs the coordinating roles"
+                )
+            options: dict[str, object] = {}
+            if task:
+                options["task"] = task
+            if role is AgentRole.SUPPLIER_RISK:
+                options["proposals"] = self._ap_proposals()
+            if role is AgentRole.VARIANCE and self.cycle_result is not None:
+                options["week_ending"] = self.cycle_result.bridge_week_ending
+
+            runner = AgentRunner(
+                provider=self.provider,
+                toolset=self.toolset,
+                routing=self.routing,
+                bus=self.bus,
+                company=self.company,
+                as_of=self.as_of,
+                investigation_id=(
+                    self.investigation.investigation_id if self.investigation else None
+                ),
+            )
+            self._manual_seq += 1
+            run = await runner.run(
+                build_specialist(role, **options),
+                run_id=f"manual-{role.value}-{self._manual_seq}",
+            )
+            self.runs.add(run)
+            self.manual_runs.append(run)
+            return run
+
+    def _ap_proposals(self) -> list[ProposedAction]:
+        """The AP agent's live deferral proposals — from the investigation, or from a run
+        an analyst started by hand.
+
+        The investigation's own proposals win when there is one, because those are the
+        ones the recommendation will be built from. Falling back to the most recent manual
+        AP run is what makes the dependency on the Agents screen real: press AP
+        Optimisation, then press Supplier Risk, and the second agent is challenging the
+        first agent's actual proposals rather than reporting that it had nothing to do.
+        """
+        if self.investigation is not None:
+            for run in self.runs.all(investigation_id=self.investigation.investigation_id):
+                if run.agent is AgentRole.AP_OPTIMIZATION and run.finding is not None:
+                    return list(run.finding.recommended_actions)
+        for run in reversed(self.runs.all()):
+            if run.agent is AgentRole.AP_OPTIMIZATION and run.finding is not None:
+                return list(run.finding.recommended_actions)
+        return []
+
     # --- steps 1-7 --------------------------------------------------------------------
+
+    def require_data_source(self) -> DataSource:
+        if self.data_source is None:
+            raise SequenceError(
+                "no data source is loaded; connect one on the Data Source screen first. "
+                "Nothing in this product is shown against a tenant that has not been loaded"
+            )
+        return self.data_source
 
     async def run_cycle(self) -> CycleResult:
         """The automated half of Monday. Idempotent: re-running replaces the draft."""
         async with self._lock:
+            self.require_data_source()
             if self.review.published is not None:
                 raise SequenceError(
                     f"version {self.review.published.version_id} is published; "
@@ -283,12 +424,78 @@ def get_session() -> Session:
     """The process-wide session. A FastAPI dependency, and overridable in tests."""
     global _session
     if _session is None:
-        _session = Session()
+        # The API process starts with nothing loaded. A bare `Session()` is the recorded
+        # demo ledger and is right for tests and `make demo`; a browser must choose.
+        _session = Session(provider=build_provider(), data_source=None)
     return _session
+
+
+def _release(previous: Session | None, replacement: Session) -> None:
+    """Close the outgoing toolset's database session, unless it is being kept.
+
+    `TenantToolset` holds one read connection for its lifetime so an agent's six tool
+    calls see one consistent snapshot. Dropping the object without closing that connection
+    leaks it, which shows up as an unraisable `ResourceWarning` in whichever unrelated test
+    the collector happens to be inside when it fires.
+    """
+    if previous is None or previous.toolset is replacement.toolset:
+        return
+    closer = getattr(previous.toolset, "close", None)
+    if callable(closer):
+        closer()
 
 
 def reset_session(session: Session | None = None) -> Session:
-    """Start Monday again. Used by the demo script and by the e2e tests."""
+    """Start Monday again. Used by the demo script and by the e2e tests.
+
+    Bare `reset_session()` keeps FakeProvider so CI never dials Gemini. Pass an explicit
+    `Session(provider=...)` (or call `get_session()` in the API process) for live models.
+    """
     global _session
-    _session = session or Session()
+    replacement = session or Session()
+    _release(_session, replacement)
+    _session = replacement
     return _session
+
+
+def bind(
+    *,
+    toolset: Toolset,
+    data_source: DataSource,
+    company: str,
+    as_of: str,
+    provider: LLMProvider | None = None,
+) -> Session:
+    """Point the product at a data source, discarding everything the last one produced.
+
+    This is the whole of the "clear on onboarding" rule: a new `Session` is constructed,
+    so the cycle result, the run store, the event bus, the investigation, the approval
+    ledger and the audit log are all new objects. There is no partial reset to get wrong,
+    and no screen can hold a reference to a figure that outlived its source.
+    """
+    return reset_session(
+        Session(
+            toolset=toolset,
+            provider=provider or _provider(),
+            company=company,
+            as_of=as_of,
+            data_source=data_source,
+        )
+    )
+
+
+def clear() -> Session:
+    """Unload the data source. Every screen goes back to its empty state."""
+    return reset_session(Session(provider=_provider(), data_source=None))
+
+
+def _provider() -> LLMProvider:
+    """Keep the provider the process is already using.
+
+    Which model backs the agents is a property of the process, not of the tenant, and
+    rebuilding it from the environment on every bind would mean a test that carefully
+    installed `FakeProvider` starts dialling Gemini the moment a source is loaded.
+    """
+    if _session is not None:
+        return _session.provider
+    return build_provider()

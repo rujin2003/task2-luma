@@ -1,7 +1,7 @@
 [
   {
     "agent": "variance",
-    "fingerprint": "31a866de32a7dd6c",
+    "fingerprint": "e41b4e893afc6411",
     "note": "Golden path: variance against the seeded W10 fixtures.",
     "output": {
       "agent": "variance",
@@ -43,13 +43,13 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 652,
+      "input_tokens": 784,
       "output_tokens": 305
     }
   },
   {
     "agent": "variance",
-    "fingerprint": "93ac2d4e1483d358",
+    "fingerprint": "bbfe07f0a3b99c50",
     "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
     "output": {
       "agent": "variance",
@@ -91,7 +91,7 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 706,
+      "input_tokens": 837,
       "output_tokens": 305
     }
   },

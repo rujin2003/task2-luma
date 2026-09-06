@@ -1,4 +1,4 @@
-.PHONY: test lint typecheck check-float ci seed seed-trivial migrate migration install demo serve frontend
+.PHONY: test lint typecheck check-float ci seed seed-trivial migrate migration install demo demo-companies onboard serve frontend gemini-smoke
 
 PYTHON ?= python3
 SEED ?= 42
@@ -41,14 +41,26 @@ migration:
 seed-trivial: migrate
 	DATABASE_URL="$(DB)" $(PYTHON) -m backend.seed.trivial
 
-# Reset → seed → shock pack → war-room cycle (stress fail → replan → recommendation).
+# Fixture-backed Monday: cycle → breach → war room → stress fail → replan → recommendation.
 demo:
-	DATABASE_URL="sqlite:///warroom-demo.db" SEED=$(SEED) \
-		$(PYTHON) scripts/demo.py --seed $(SEED) --db sqlite:///warroom-demo.db \
-		--golden tests/fixtures/demo/golden_seed_$(SEED).json
+	WARROOM_LLM=fake $(PYTHON) -m scripts.demo
 
 serve:
-	$(PYTHON) -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+	env -u WARROOM_LLM $(PYTHON) -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 
 frontend:
 	cd frontend && npm run dev
+
+gemini-smoke:
+	$(PYTHON) -m scripts.gemini_smoke
+
+# The four demo tenants' *source* databases -- four different schemas for the DB Agent
+# to read. Written to var/demo/ with a manifest the Data Source screen lists.
+demo-companies:
+	$(PYTHON) -m scripts.demo_company
+
+# Walk the DB Agent end to end on one tenant, on the command line:
+#   make onboard TENANT=northgate
+TENANT ?= helios
+onboard: demo-companies
+	$(PYTHON) -m scripts.onboard --tenant $(TENANT)

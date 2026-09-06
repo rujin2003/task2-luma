@@ -8,6 +8,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend import api
+from backend.agents.factory import load_env
 from backend.api.session import APP_VERSION
 from backend.finance.policy import TreasuryPolicy
 from backend.integrations.dodo.webhooks import (
@@ -16,9 +17,24 @@ from backend.integrations.dodo.webhooks import (
     receive_webhook,
 )
 
-# The Next.js dev server. Narrow by origin rather than wildcard even in a demo: an API
-# that answers anyone is a habit that survives into the deployment where it matters.
-DEV_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+load_env()
+
+# The Next.js dev server / production origins. Narrow by origin rather than wildcard
+# even in a demo: an API that answers anyone is a habit that survives into deployment.
+DEV_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://129.225.100.252",
+    "http://129.225.100.252:3000",
+]
+
+
+def _cors_origins() -> list[str]:
+    extra = os.environ.get("WARROOM_CORS_ORIGINS", "")
+    if not extra.strip():
+        return list(DEV_ORIGINS)
+    return list(dict.fromkeys([*DEV_ORIGINS, *[o.strip() for o in extra.split(",") if o.strip()]]))
+
 
 _webhook_store = WebhookStore()
 
@@ -27,9 +43,15 @@ def create_app() -> FastAPI:
     app = FastAPI(title="WAR ROOM", version=APP_VERSION)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=DEV_ORIGINS,
+        allow_origins=_cors_origins(),
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "Last-Event-ID", "webhook-id", "webhook-timestamp", "webhook-signature"],
+        allow_headers=[
+            "Content-Type",
+            "Last-Event-ID",
+            "webhook-id",
+            "webhook-timestamp",
+            "webhook-signature",
+        ],
     )
     api.errors.install(app)
     app.include_router(api.router)

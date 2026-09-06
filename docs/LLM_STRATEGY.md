@@ -6,18 +6,20 @@ and provider-agnostic"), so model choice is configuration, not architecture.
 
 ---
 
-## 1. Model selection — verify before committing
+## 1. Model selection — verified 2026-09-06
 
-**"Gemini 3.1 Flash" appears to be superseded.** As of this writing Google's docs banner
-reads *"Gemini 3.8 Flash is now available"* and their code samples use `gemini-3.7-flash`.
-The API endpoint `https://generativelanguage.googleapis.com/v1beta/models` is live and
-key-gated.
+Listed against a live `GEMINI_API_KEY` via
+`https://generativelanguage.googleapis.com/v1beta/models`.
 
-**Unverified — confirm before building against them:** exact model IDs, context window,
-pricing, free-tier rate limits, structured-output support, and function-calling support.
-The docs pages are client-rendered and could not be read programmatically during planning.
+| Role default | Model id | Input / output limits | Notes |
+|---|---|---|---|
+| Specialists | `gemini-3.8-flash` | 1,048,576 / 65,536 | `generateContent`; structured JSON OK with `thinkingBudget: 0` |
+| Commander / conflict | `gemini-3.1-pro-preview` | 1,048,576 / 65,536 | `gemini-2.5-pro` returns 404 for new keys |
 
-Do this first, and record the answers in this file:
+Also present and usable: `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`,
+`gemini-flash-latest`. Image/TTS variants are out of scope.
+
+Re-check anytime:
 
 ```bash
 curl "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY" \
@@ -58,17 +60,15 @@ class LLMProvider(Protocol):
 
 ```yaml
 # config/models.yaml
-default: {provider: gemini, model: gemini-3.7-flash}
+defaults: {provider: gemini, model: gemini-3.8-flash}
 roles:
-  commander:          {effort: high}
-  conflict_resolution: {effort: high}
-  covenant_explainer: {max_output_tokens: 400}
-  cartographer:       {max_output_tokens: 300}
+  commander:          {model: gemini-3.1-pro-preview}
+  conflict_resolution: {model: gemini-3.1-pro-preview}
 ```
 
-Two implementations from day one — `GeminiProvider` and a `FakeProvider` that replays
-recorded fixtures. The fake is what makes the golden-path demo deterministic and the test
-suite free.
+Two implementations — `GeminiProvider` (`backend/agents/gemini.py`) and a `FakeProvider`
+that replays recorded fixtures. Set `WARROOM_LLM=gemini` and `GEMINI_API_KEY` in `.env`
+for live calls; tests and `make demo` stay on fixtures.
 
 ---
 
@@ -107,6 +107,27 @@ slowly, instead of quadratically.
 Enforced per role, logged per run on `AgentRun`, and asserted in CI so a prompt change that
 doubles context fails the build.
 
+The output line was originally 500 tokens and that was measured wrong. A complete
+`AgentFinding` carries a confidence block, evidence with excerpts, risks and recommended
+actions; against a 500-token cap live Gemini truncated mid-string and the run failed
+schema validation. The failure was honest — nothing was fabricated — but the cap was
+below the contract the agents are required to satisfy.
+
+It was then raised again, from 2500 to 4000, when the tool layer started reading real
+tenant ledgers. Against the fixture toolset on `gemini-3.8-flash` the six specialists
+produce 175–1777 output tokens. Against a loaded tenant they produce more, for a reason
+that is not prompt bloat: AR Collections and AP Optimisation emit one action and one
+citation per ranked row, so their output scales with the size of the customer's book.
+Both truncated mid-JSON at 2000 and at 3200 against a 50-invoice tenant, and completed at
+4000. The truncation was reported honestly as a schema violation rather than a partial
+finding — but a failed agent is still a failed agent.
+
+Two things were done rather than only raising the number. References now carry the
+tenant's own document key (`ar_ledger:AR-4099`) instead of a 32-character surrogate id,
+and the per-row basis string was shortened, because both are repeated on every row and
+echoed into every excerpt. Input budgets are unchanged — this is not a licence for longer
+prompts, and the two ranking roles are the only ones pinned above the default.
+
 | Component | Budget |
 |---|---|
 | System prompt (per agent, static) | < 800 tok |
@@ -114,7 +135,7 @@ doubles context fails the build.
 | Findings digest | < 400 tok |
 | Tool results (hard row caps, pre-aggregated) | < 1500 tok |
 | **Total input per agent call** | **< 4000 tok** |
-| Output (structured JSON, no prose) | < 500 tok |
+| Output (structured JSON, no prose) | < 4000 tok |
 
 Techniques that get you there:
 
@@ -186,4 +207,4 @@ Do 1 and 2 first; keep 3 available and measure before spending.
 - Token-budget assertions in CI.
 - A small eval set per agent role, so a model swap is a measurement rather than a guess.
   This matters more than usual here: you are on a fast-moving model family, and
-  `gemini-3.7-flash` will not be current for long.
+  today's `gemini-3.8-flash` will not be current for long.

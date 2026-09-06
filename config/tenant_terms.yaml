@@ -1,0 +1,36 @@
+# Assumptions the tenant toolset applies to a freshly onboarded ledger.
+#
+# A source database gives us invoices, vendors, bank movements. It does not give us a
+# collection curve or a supplier deferral policy, and inventing either inside the code
+# would make a modelling choice invisible. They live here, they are versioned, and every
+# figure derived from them is labelled with the band it came from.
+version: 1
+
+# Probability that an open receivable is collected inside the forecast horizon, by aging
+# band. Applied to the tenant's own open invoices; the basis string on every ranked row
+# names the band, so a CFO can see which prior produced the number.
+collection_probability_bps:
+  not_yet_due: 9200
+  d1_30: 8600
+  d31_60: 7000
+  d61_90: 5200
+  d90_plus: 3000
+
+# A disputed invoice is not simply a late one. Multiplier applied on top of the band.
+disputed_multiplier_bps: 4500
+
+# How far a payable may be pushed, by the vendor criticality the source system carries.
+# Protected classes (payroll, tax, statutory) are read from the treasury policy and are
+# never deferrable regardless of what appears here.
+max_delay_days_by_criticality:
+  important: 12
+  critical: 7
+  standard: 21
+  unknown: 14
+
+# Weeks of horizon. The direct-method forecast is thirteen weeks by definition of the
+# product; this exists so the number is stated once.
+horizon_weeks: 13
+
+# A driver assumption older than this many days is reported stale.
+stale_after_days: 30

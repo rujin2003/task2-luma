@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import { dependents, provenanceChain } from "@/lib/evidence";
+import { dependents, provenanceChain, resolveLive } from "@/lib/evidence";
+import type { EvidenceRecord } from "@/lib/evidence";
 
 import { EvidenceRow, MissingRow } from "./EvidenceRow";
 
@@ -26,6 +27,24 @@ export function EvidenceDrawer({
   onClose: () => void;
   onWalk: (reference: string) => void;
 }) {
+  // One piece of state, keyed by the reference it belongs to, so switching references
+  // does not need a synchronous reset inside the effect: a resolution for a reference the
+  // drawer has moved on from is simply not the one being rendered.
+  const [resolved, setResolved] = useState<{ reference: string; record: EvidenceRecord | null }>({
+    reference: "",
+    record: null,
+  });
+
+  // Resolved against the loaded source rather than looked up in a fixture: the analyst
+  // clicked this number because they did not believe it, and the row that answers them is
+  // the one in the tenant's own ledger.
+  useEffect(() => {
+    if (!reference) return;
+    resolveLive(reference)
+      .then((row) => setResolved({ reference, record: row.resolved ? row : null }))
+      .catch(() => setResolved({ reference, record: null }));
+  }, [reference]);
+
   useEffect(() => {
     if (!reference) return;
     const onKey = (event: KeyboardEvent) => {
@@ -38,7 +57,9 @@ export function EvidenceDrawer({
   if (!reference) return null;
 
   const chain = provenanceChain(reference);
-  const root = chain[0];
+  const settled = resolved.reference === reference;
+  const live = settled ? resolved.record : null;
+  const root = live ? { reference, record: live, depth: 0 } : chain[0];
   const underneath = chain.slice(1);
   const restsOnThis = dependents(reference);
 
@@ -68,8 +89,10 @@ export function EvidenceDrawer({
         <div className="flex flex-col gap-4 px-4 py-4">
           {root?.record ? (
             <EvidenceRow record={root.record} />
-          ) : (
+          ) : settled ? (
             <MissingRow reference={reference} />
+          ) : (
+            <p className="text-xs text-ink-3">Resolving against the loaded ledger…</p>
           )}
 
           <section>
@@ -111,8 +134,9 @@ export function EvidenceDrawer({
           ) : null}
 
           <p className="border-t border-line pt-3 text-xs text-ink-3">
-            Synthetic ledger. Provenance is `(source, record, field, as of)`; the engine replaces
-            these rows behind the same references at Merge Point 1.
+            Provenance is `(source, record, field, as of)`, resolved against the source that is
+            currently loaded. A reference that no longer resolves is drawn as a break in the chain
+            rather than quietly omitted.
           </p>
         </div>
       </aside>

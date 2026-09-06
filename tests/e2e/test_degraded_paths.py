@@ -173,9 +173,9 @@ async def test_losing_the_adversary_is_visible_in_the_result(no_supplier_risk) -
     investigation = await run_monday(no_supplier_risk)
 
     assert investigation["degraded"]
-    assert any(
-        "supplier_risk" in reason for reason in investigation["degradation_reasons"]
-    ), investigation["degradation_reasons"]
+    assert any("supplier_risk" in reason for reason in investigation["degradation_reasons"]), (
+        investigation["degradation_reasons"]
+    )
 
 
 async def test_the_timed_out_agent_reports_a_terminal_status_with_a_reason(

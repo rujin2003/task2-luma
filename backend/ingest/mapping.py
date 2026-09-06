@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from backend.ingest.agents import CartographerProposal
 
 
 class FieldMapping(BaseModel):
@@ -182,11 +185,74 @@ def draft_from_template(
     )
 
 
+def draft_from_proposal(
+    proposal: CartographerProposal,
+    *,
+    source: str,
+    fingerprint_hash: str,
+    confirmed_by: str = "system",
+    default_currency: str = "USD",
+) -> TenantMapping:
+    """Turn a Cartographer proposal into a version-1 draft mapping.
+
+    This is the path a schema nobody has a template for takes. It is deliberately
+    mechanical: the proposal already carries the judgement, and a mapping that
+    quietly improved on it would put a second opinion somewhere nobody reviews.
+
+    A missing `currency` column becomes a `const` field rather than a hole, because
+    a row without a currency is not loadable at all — and stating the tenant default
+    explicitly in the frozen mapping is what makes that assumption reviewable.
+    """
+    from backend.ingest.columns import ACCEPT_BPS
+
+    units_by_column = {(unit.table, unit.column): unit.units for unit in proposal.units}
+    by_table = {table.table: table.entity_role for table in proposal.tables}
+
+    grouped: dict[str, dict[str, FieldMapping]] = {}
+    for column in proposal.columns:
+        role = by_table.get(column.table)
+        if role is None or column.confidence_bps < ACCEPT_BPS:
+            continue
+        grouped.setdefault(role, {})[column.canonical_field] = FieldMapping(
+            col=column.column,
+            units=units_by_column.get((column.table, column.column)),
+            reason=f"cartographer {column.confidence_bps}bps",
+        )
+
+    table_for_role = {role: table for table, role in by_table.items()}
+    entities: dict[str, EntityMapping] = {}
+    for role, fields in grouped.items():
+        if "currency" not in fields:
+            fields["currency"] = FieldMapping(
+                const=default_currency, reason="no currency column found; tenant default"
+            )
+        entities[role] = EntityMapping(from_table=table_for_role[role], fields=fields)
+
+    capabilities = CapabilityManifest(
+        bank_feed="BankTransaction" in entities,
+        ar_subledger="Invoice" in entities,
+        ap_subledger="VendorInvoice" in entities,
+        gl="absent",
+    )
+    return TenantMapping(
+        version=1,
+        source=source,
+        confirmed_by=confirmed_by,
+        confirmed_at=datetime.now(UTC),
+        coverage_rows_bps=0,
+        coverage_value_bps=0,
+        entities=entities,
+        capabilities=capabilities,
+        fingerprint_hash=fingerprint_hash,
+    )
+
+
 __all__ = [
     "CapabilityManifest",
     "EntityMapping",
     "FieldMapping",
     "TenantMapping",
+    "draft_from_proposal",
     "draft_from_template",
     "freeze_mapping",
     "load_mapping",

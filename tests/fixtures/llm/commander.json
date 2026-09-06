@@ -1,14 +1,14 @@
 [
   {
     "agent": "commander",
-    "fingerprint": "2fdb1b678b35bc25",
+    "fingerprint": "9c3fbdc8ebbe70fb",
     "note": "Golden path: the full sweep on the seeded W6 minimum-cash breach.",
     "output": {
       "plan_id": "full-liquidity-sweep",
       "rationale": "The W6 trough is $1.6M below the floor and every source is connected, so no single lever closes it: receivables, payables and subscription recovery all have to be priced before a bundle can be composed. Narrowing now would need widening later, after the treasurer has already read the answer."
     },
     "usage": {
-      "input_tokens": 878,
+      "input_tokens": 1009,
       "output_tokens": 86
     }
   },

@@ -1,7 +1,7 @@
 [
   {
     "agent": "dodo_revenue",
-    "fingerprint": "1acc05469985ca0f",
+    "fingerprint": "f57d8a386247e551",
     "note": "Golden path: dodo_revenue against the seeded W10 fixtures.",
     "output": {
       "agent": "dodo_revenue",
@@ -58,13 +58,13 @@
       ]
     },
     "usage": {
-      "input_tokens": 632,
+      "input_tokens": 763,
       "output_tokens": 328
     }
   },
   {
     "agent": "dodo_revenue",
-    "fingerprint": "e6fcd91369274836",
+    "fingerprint": "12af409dae74776d",
     "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
     "output": {
       "agent": "dodo_revenue",
@@ -121,7 +121,7 @@
       ]
     },
     "usage": {
-      "input_tokens": 685,
+      "input_tokens": 816,
       "output_tokens": 328
     }
   },

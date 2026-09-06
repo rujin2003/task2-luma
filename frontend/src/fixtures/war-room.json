@@ -32,7 +32,7 @@
       "event_id": "event-3",
       "investigation_id": null,
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-1",
       "schema_version": "1.0.0",
       "seq": 2,
@@ -299,7 +299,7 @@
       "event_id": "event-17",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-pro",
+      "model": "gemini-3.1-pro-preview",
       "run_id": "run-2",
       "schema_version": "1.0.0",
       "seq": 16,
@@ -477,7 +477,7 @@
       "event_id": "event-29",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-3",
       "schema_version": "1.0.0",
       "seq": 28,
@@ -605,7 +605,7 @@
       "event_id": "event-35",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-4",
       "schema_version": "1.0.0",
       "seq": 34,
@@ -743,7 +743,7 @@
       "event_id": "event-41",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-5",
       "schema_version": "1.0.0",
       "seq": 40,
@@ -894,7 +894,7 @@
       "event_id": "event-46",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-6",
       "schema_version": "1.0.0",
       "seq": 45,
@@ -1032,7 +1032,7 @@
       "event_id": "event-51",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-7",
       "schema_version": "1.0.0",
       "seq": 50,
@@ -1172,7 +1172,7 @@
       "event_id": "event-56",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-8",
       "schema_version": "1.0.0",
       "seq": 55,
@@ -1339,7 +1339,7 @@
       "event_id": "event-65",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-9",
       "schema_version": "1.0.0",
       "seq": 64,
@@ -1439,7 +1439,7 @@
       "event_id": "event-70",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-pro",
+      "model": "gemini-3.1-pro-preview",
       "run_id": "run-10",
       "schema_version": "1.0.0",
       "seq": 69,
@@ -1884,7 +1884,7 @@
       "event_id": "event-79",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-11",
       "schema_version": "1.0.0",
       "seq": 78,
@@ -2061,7 +2061,7 @@
       "event_id": "event-87",
       "investigation_id": "investigation-1",
       "mark": "working",
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "run_id": "run-12",
       "schema_version": "1.0.0",
       "seq": 86,
@@ -4332,7 +4332,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": 0,
       "run_id": "run-3",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4369,7 +4369,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 693,
+        "input_tokens": 824,
         "output_tokens": 220
       }
     },
@@ -4426,7 +4426,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": 0,
       "run_id": "run-4",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4467,7 +4467,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 706,
+        "input_tokens": 837,
         "output_tokens": 305
       }
     },
@@ -4554,7 +4554,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": 0,
       "run_id": "run-5",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4582,7 +4582,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 818,
+        "input_tokens": 949,
         "output_tokens": 397
       }
     },
@@ -4656,7 +4656,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": 0,
       "run_id": "run-6",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4685,7 +4685,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 748,
+        "input_tokens": 880,
         "output_tokens": 340
       }
     },
@@ -4765,7 +4765,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": 0,
       "run_id": "run-7",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4784,7 +4784,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 685,
+        "input_tokens": 816,
         "output_tokens": 328
       }
     },
@@ -4826,7 +4826,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": 0,
       "run_id": "run-8",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4867,7 +4867,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 784,
+        "input_tokens": 915,
         "output_tokens": 207
       }
     },
@@ -4903,7 +4903,7 @@
       },
       "investigation_id": "investigation-1",
       "latency_ms": 0,
-      "model": "gemini-3.7-flash",
+      "model": "gemini-3.8-flash",
       "queued_ms": null,
       "run_id": "run-9",
       "started_at": "2026-03-02T09:00:00Z",
@@ -4933,7 +4933,7 @@
         }
       ],
       "usage": {
-        "input_tokens": 581,
+        "input_tokens": 712,
         "output_tokens": 182
       }
     }

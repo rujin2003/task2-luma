@@ -38,3 +38,7 @@ out/
 *.sqlite3
 novatech_trivial.db
 .dump
+
+# Generated demo source databases, the tenant store, and frozen tenant mappings.
+var/
+*.db

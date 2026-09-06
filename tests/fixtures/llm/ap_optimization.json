@@ -1,7 +1,7 @@
 [
   {
     "agent": "ap_optimization",
-    "fingerprint": "a6d8020d76fc75ea",
+    "fingerprint": "1457dee4f9d174f0",
     "note": "Golden path: ap_optimization against the seeded W10 fixtures.",
     "output": {
       "agent": "ap_optimization",
@@ -59,13 +59,13 @@
       ]
     },
     "usage": {
-      "input_tokens": 695,
+      "input_tokens": 826,
       "output_tokens": 340
     }
   },
   {
     "agent": "ap_optimization",
-    "fingerprint": "c6fa360e15294cb2",
+    "fingerprint": "27b25eab410256a2",
     "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
     "output": {
       "agent": "ap_optimization",
@@ -123,13 +123,13 @@
       ]
     },
     "usage": {
-      "input_tokens": 748,
+      "input_tokens": 880,
       "output_tokens": 340
     }
   },
   {
     "agent": "ap_optimization",
-    "fingerprint": "488a54663c1fbcc9",
+    "fingerprint": "5e4c629a7e88a270",
     "note": "Must-refuse: pressed for a target, the model reaches for payroll.",
     "output": {
       "agent": "ap_optimization",
@@ -184,7 +184,7 @@
       ]
     },
     "usage": {
-      "input_tokens": 695,
+      "input_tokens": 826,
       "output_tokens": 270
     }
   },

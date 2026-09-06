@@ -24,6 +24,29 @@ from backend.agents.routing import TokenBudget
 from backend.contracts.agent import AgentFinding, AgentRole
 from backend.tools.results import CapabilityManifest, LiquidityPosition, PolicyConstraints
 
+#: The parts of the output contract a JSON schema cannot express.
+#:
+#: `AgentFinding` and `Confidence` both carry Pydantic `model_validator` rules — a
+#: complete finding must cite evidence, a rejection must attach it, an empirical
+#: confidence must carry measured error. Gemini's `responseSchema` subset has no way to
+#: represent a conditional requirement, so a model shown only the schema will reasonably
+#: return `status: "complete"` with an empty evidence list, or `basis: "empirical"` with
+#: null error fields, and the run fails validation on a rule nobody told it.
+#:
+#: These are stated here rather than in six prompt files because they are one contract,
+#: and a rule copied six times is a rule that will be five places out of date. Changing
+#: this list moves every recording's fingerprint, which is the intended friction: it is a
+#: change to what every agent was asked for.
+CONTRACT_RULES = [
+    "status complete requires at least one evidence reference; if you have nothing you can"
+    " cite, return degraded or refused and say why in detail",
+    "rejecting another agent's proposal requires attached evidence",
+    "cite only references your tools actually returned; an unresolvable citation is rejected",
+    "empirical confidence: give mape_pct and sample_size, and no band",
+    "qualitative confidence: give band, and no mape_pct or sample_size",
+    "claim empirical only where a tool returned measured error; otherwise qualitative",
+]
+
 
 class Incident(BaseModel):
     """The specific, dated, quantified condition the war room opened on."""
@@ -69,6 +92,7 @@ class ContextPack(BaseModel):
             ("TASK", [self.task]),
             ("TOOLS", [", ".join(self.tools)] if self.tools else []),
             ("OUTPUT", [f"Return one {self.output_schema}. No prose, no reasoning."]),
+            ("CONTRACT", CONTRACT_RULES),
         ]
         blocks = [
             f"{heading}\n" + "\n".join(f"- {line}" for line in lines)

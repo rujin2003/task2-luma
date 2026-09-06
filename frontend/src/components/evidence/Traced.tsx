@@ -40,7 +40,10 @@ export function Traced({
     );
   }
 
-  const resolves = lookup(reference) !== undefined;
+  // Resolution is a question for the backend, which holds the loaded ledger, so the mark
+  // here is not a verdict: the drawer resolves the reference and says plainly when the
+  // chain is broken. The fixture lookup only lets the recorded demo show that state early.
+  const resolves = lookup(reference)?.resolved !== false;
 
   return (
     <button
