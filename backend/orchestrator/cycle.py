@@ -30,10 +30,16 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.agents.provider import LLMTimeout
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import build
 from backend.contracts.agent import AgentFinding, AgentRole, AgentRun, AgentStatus
-from backend.contracts.events import CycleStepCompleted, StatusMark, SystemDegraded
+from backend.contracts.events import (
+    AgentStatusChanged,
+    CycleStepCompleted,
+    StatusMark,
+    SystemDegraded,
+)
 from backend.contracts.money import Money
 from backend.contracts.provenance import Evidence
 from backend.orchestrator.bus import EventBus
@@ -318,7 +324,34 @@ class WeeklyCycle:
         if self._runner is None:
             return None, "no agent runtime configured for this cycle"
 
-        run = await self._runner.run(build(AgentRole.VARIANCE), run_id=f"{self.cycle_id}-variance")
+        # `AgentRunner` re-raises `LLMTimeout` on purpose: retrying is the wave executor's
+        # job, and the executor is the only caller placed to decide. Step 3 has no
+        # executor -- it is one agent, run inline -- so there is nothing above this to
+        # catch it. Unhandled, a rate-limited model on a Monday morning takes down the
+        # whole cycle: the reforecast, the exceptions queue, the publish, all of it, over a
+        # paragraph the bridge does not need in order to tie. The numbers are the engine's
+        # and only the explanation was the model's, so this loses the explanation and says
+        # which one it lost.
+        try:
+            run = await self._runner.run(
+                build(AgentRole.VARIANCE), run_id=f"{self.cycle_id}-variance"
+            )
+        except (LLMTimeout, TimeoutError) as exc:
+            # The runner already emitted `agent.started` for this lane, so swallowing the
+            # timeout silently would leave the feed showing Variance still working for the
+            # rest of the week. Whoever opens a lane closes it; in the wave that is the
+            # executor's `_unfinished`, and here it is this.
+            reason = str(exc) or "the variance agent did not answer in time"
+            self._bus.emit(
+                AgentStatusChanged,
+                mark=StatusMark.FAIL,
+                status_line=f"{AgentRole.VARIANCE.value}: {AgentStatus.TIMEOUT.value}",
+                agent=AgentRole.VARIANCE,
+                run_id=f"{self.cycle_id}-variance",
+                status=AgentStatus.TIMEOUT,
+                failure_reason=reason[:400],
+            )
+            return None, f"variance explanation timed out: {reason}"
         self.variance_run = run
         if self._store is not None:
             self._store.add(run)
