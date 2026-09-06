@@ -1,7 +1,7 @@
 [
   {
     "agent": "forecast",
-    "fingerprint": "e0de99eeb7d39c98",
+    "fingerprint": "204e44e5ea7320a0",
     "note": "Golden path: forecast against the seeded W10 fixtures.",
     "output": {
       "agent": "forecast",
@@ -31,13 +31,13 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 771,
+      "input_tokens": 856,
       "output_tokens": 220
     }
   },
   {
     "agent": "forecast",
-    "fingerprint": "9d76c7c49895e87a",
+    "fingerprint": "fa62c01d2ce4cf6d",
     "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
     "output": {
       "agent": "forecast",
@@ -67,7 +67,7 @@
       "recommended_actions": []
     },
     "usage": {
-      "input_tokens": 824,
+      "input_tokens": 909,
       "output_tokens": 220
     }
   },
