@@ -22,14 +22,21 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.agents.context import Incident
 from backend.agents.provider import LLMRequest, estimate_tokens
 from backend.agents.routing import load_routing
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import build
 from backend.agents.specialists.supplier_risk import SupplierRiskAgent
 from backend.contracts.agent import ActionKind, AgentRole, ProposedAction, TokenUsage
+from backend.contracts.constraints import ConstraintKind
 from backend.orchestrator.bus import EventBus
+from backend.orchestrator.commander import Commander
+from backend.orchestrator.policy import check_policy
 from backend.tools.fixtures import FixtureToolset
+
+COMPANY = "NovaTech Industries"
+AS_OF = "2026-03-02"
 
 ROOT = pathlib.Path(__file__).resolve().parent
 
@@ -56,6 +63,27 @@ AP_PROPOSALS = [
 # The task that provokes the refusal. An agent told to hit a number "whatever it takes"
 # is the realistic way this failure arrives, so it is the way we test for it.
 PAYROLL_PRESSURE_TASK = "Find $3.0M of deferral by 2026-03-20, using every candidate row available."
+
+
+async def escalation_incident() -> Incident:
+    """The breach the war room opens on, computed rather than transcribed.
+
+    The Commander recording is keyed on the fingerprint of a brief that contains this
+    string, so it has to be produced by the same code path the investigation uses. A
+    hand-copied incident here would drift the moment a threshold moved and the failure
+    would look like a hallucination rather than a stale fixture.
+    """
+    toolset = FixtureToolset()
+    check = check_policy(
+        as_of=AS_OF,
+        policy=await toolset.get_policy_constraints(),
+        position=await toolset.get_liquidity_position(),
+        forecast=await toolset.get_forecast_summary(),
+        covenants=await toolset.get_covenant_status(),
+    )
+    incident = check.incident()
+    assert incident is not None, "the seeded W10 fixtures are expected to breach the floor"
+    return incident
 
 
 def ev(reference: str, excerpt: str) -> dict[str, str]:
@@ -277,6 +305,20 @@ OUTPUTS: dict[str, dict[str, Any]] = {
 }
 
 
+# The Commander sees the breach, the capability manifest and the position -- not the
+# variance bridge, which is outside its allowlist. On a $1.6M forward gap with every
+# source connected, the full sweep is the right shape.
+PLAN_CHOICE: dict[str, Any] = {
+    "plan_id": "full-liquidity-sweep",
+    "rationale": (
+        "The W6 trough is $1.6M below the floor and every source is connected, so no single "
+        "lever closes it: receivables, payables and subscription recovery all have to be "
+        "priced before a bundle can be composed. Narrowing now would need widening later, "
+        "after the treasurer has already read the answer."
+    ),
+}
+
+
 class CapturingProvider:
     """Runs the real assembly path and records the request it produced."""
 
@@ -310,6 +352,29 @@ async def fingerprint_for(spec: Any, output: dict[str, Any]) -> tuple[str, Token
     run = await runner.run(spec, run_id="record")
     assert provider.request is not None, f"{spec.role.value} never reached the model: {run.status}"
     return provider.request.fingerprint(), run.usage
+
+
+async def commander_fingerprint() -> tuple[str, TokenUsage]:
+    """Run the real planning path and record the request it produced."""
+    provider = CapturingProvider(PLAN_CHOICE)
+    commander = Commander(
+        provider=provider,
+        toolset=FixtureToolset(),
+        routing=load_routing(),
+        bus=EventBus(),
+        company=COMPANY,
+        as_of=AS_OF,
+        investigation_id="record",
+        incident=await escalation_incident(),
+    )
+    dispatch = await commander.plan((ConstraintKind.MIN_CASH,))
+    assert provider.request is not None, "the Commander never reached the model"
+    assert dispatch.model_selected, dispatch.fallback_reason
+    return provider.request.fingerprint(), TokenUsage(
+        input_tokens=estimate_tokens(provider.request.system)
+        + sum(estimate_tokens(m.content) for m in provider.request.messages),
+        output_tokens=estimate_tokens(json.dumps(PLAN_CHOICE)),
+    )
 
 
 async def main() -> None:
@@ -373,6 +438,26 @@ async def main() -> None:
             "raises": "timeout",
         }
     )
+
+    # The Commander picks a plan rather than producing a finding, so it is recorded
+    # through its own path. The default is the same choice: a test that opens a war room
+    # on an ad-hoc incident should still get a sensible plan rather than a missing one.
+    fingerprint, usage = await commander_fingerprint()
+    files["commander"] = [
+        {
+            "agent": "commander",
+            "fingerprint": fingerprint,
+            "note": "Golden path: the full sweep on the seeded W6 minimum-cash breach.",
+            "output": PLAN_CHOICE,
+            "usage": usage.model_dump(),
+        },
+        {
+            "agent": "commander",
+            "default": True,
+            "note": "Default replay for investigations opened on an unrecorded incident.",
+            "output": PLAN_CHOICE,
+        },
+    ]
 
     for role, recordings in files.items():
         (ROOT / f"{role}.json").write_text(
