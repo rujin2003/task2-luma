@@ -1,22 +1,18 @@
 # WAR ROOM
 
-Weekly 13-week rolling direct-method cash forecast, with a war-room escalation
-when the cycle detects a policy breach.
-
-Person 1 owns the financial spine: data model, seed, forecast engine, Dodo,
-onboarding, and backend controls. Person 2 owns agents, orchestration, API, and UI.
-
-## Current state
+Weekly 13-week rolling direct-method cash forecast, with a war room escalation when the
+cycle detects a policy breach.
 
 Merged Person 1 spine + Person 2 agents/frontend:
 
-- `backend/finance/` — Money, cadence, forecast, variance, accuracy, cash, covenants, constraints, controls, audit, execution
+- `backend/finance/` — Money, cadence, forecast, variance, accuracy, cash, covenants, controls, audit, execution
 - `backend/models/` + `alembic/` — SQLModel entities and migrations
 - `backend/seed/` — deterministic NovaTech generator (`make seed SEED=42`) with 26-week forecast history
-- `backend/tools/engine.py` — real `EngineToolset` behind Person 2's tool protocol
+- `backend/tools/` — real `EngineToolset` behind the agent tool protocol
 - `backend/integrations/dodo/` — client, webhooks (Standard Webhooks), payout lag, metrics, decline taxonomy
 - `backend/ingest/` — Schema Cartographer (introspect → template match → reconcile → freeze → drift)
-- `backend/agents/` + `frontend/` — six specialists, runtime, Forecast + Evidence screens
+- `backend/agents/` + `backend/orchestrator/` — six specialists, weekly cycle, Commander path, stress/replan
+- `backend/api/` + `frontend/` — Forecast, War Room, Recommendation, Evidence screens
 
 ## Setup
 
@@ -27,26 +23,39 @@ make seed SEED=42
 make demo
 ```
 
-`make ci` runs ruff, mypy (strict on `backend/finance`), the no-float gate, and pytest.
+```bash
+# API (cycle, SSE, recommendation, approvals)
+make serve
+
+# UI (Forecast / War Room / Recommendation / Evidence)
+cd frontend && npm install && npm run dev
+```
+
 `make demo` resets a SQLite DB, seeds NovaTech, applies the shock pack, and asserts the
-golden narrative in `tests/fixtures/demo/`.
+golden spine narrative in `tests/fixtures/demo/`. It also runs the deterministic war-room
+path (fixture tools + FakeProvider): breach → investigation → conflict → stress failure →
+replan → recommendation.
+
+`make ci` runs ruff, mypy (strict on `backend/finance`), the no-float gate, and pytest.
 
 ## Layout
 
-```
-backend/finance/       Money, FX, policy, provenance, forecast engine, controls
-backend/contracts/     shared Pydantic contracts (agents + engine DTOs)
-backend/tools/         Toolset protocol, FixtureToolset, EngineToolset
-backend/models/        SQLModel entities
-backend/seed/          NovaTech generator + shocks
-backend/integrations/  Dodo adapter (webhooks, payout lag, metrics)
-backend/ingest/        Schema Cartographer + mapping freeze
-backend/agents/        specialist agents and LLM providers
-frontend/              Next.js Forecast / Evidence UI
-config/                TreasuryPolicy + model routing
-tests/                 finance, seed, tools, agents, ingest, integrations
-docs/                  workflow, phases, schema adaptation
-person1.md / person2.md ownership plans
+```text
+backend/finance/          Money, FX, policy, provenance, forecast engine, controls
+backend/contracts/        shared Pydantic contracts (agents + engine DTOs)
+backend/tools/            tool protocol, FixtureToolset, EngineToolset
+backend/models/           SQLModel entities
+backend/seed/             NovaTech generator + shocks
+backend/integrations/     Dodo adapter (webhooks, payout lag, metrics)
+backend/ingest/           Schema Cartographer + mapping freeze
+backend/agents/           specialist agents and LLM providers
+backend/orchestrator/     weekly cycle, investigation, stress, replan
+backend/api/              FastAPI cycle / SSE / recommendation / approvals
+frontend/                 Next.js Forecast / War Room / Recommendation / Evidence UI
+config/                   TreasuryPolicy + model routing
+tests/                    finance, seed, tools, agents, ingest, integrations, e2e
+docs/                     workflow, phases, schema adaptation
+person1.md / person2.md   ownership plans
 ```
 
 Read `docs/WORKFLOW.md` then `docs/PHASES.md` before changing contracts.

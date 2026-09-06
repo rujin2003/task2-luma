@@ -1,4 +1,4 @@
-.PHONY: test lint typecheck check-float ci seed seed-trivial migrate migration install demo
+.PHONY: test lint typecheck check-float ci seed seed-trivial migrate migration install demo serve frontend
 
 PYTHON ?= python3
 SEED ?= 42
@@ -41,8 +41,14 @@ migration:
 seed-trivial: migrate
 	DATABASE_URL="$(DB)" $(PYTHON) -m backend.seed.trivial
 
-# Reset → seed → shock pack → deterministic narrative (Person 1 Phase 11).
+# Reset → seed → shock pack → war-room cycle (stress fail → replan → recommendation).
 demo:
 	DATABASE_URL="sqlite:///warroom-demo.db" SEED=$(SEED) \
 		$(PYTHON) scripts/demo.py --seed $(SEED) --db sqlite:///warroom-demo.db \
 		--golden tests/fixtures/demo/golden_seed_$(SEED).json
+
+serve:
+	$(PYTHON) -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+
+frontend:
+	cd frontend && npm run dev
