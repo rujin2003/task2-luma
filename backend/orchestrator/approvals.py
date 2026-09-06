@@ -113,15 +113,26 @@ def load_matrix(path: Path | None = None) -> DoaMatrix:
 # --- classification ---------------------------------------------------------------------
 
 
-def action_class(item: WorklistItem, *, protected: bool = False) -> str:
-    """The matrix key for a row. Protected classes route to the blocked entry."""
+def action_class(
+    item: WorklistItem,
+    *,
+    protected: bool = False,
+    discount_pct: Decimal | None = None,
+) -> str:
+    """The matrix key for a row. Protected classes route to the blocked entry.
+
+    Early-pay is banded on the *discount rate*, not the amount, so the rate has to be
+    passed in: it lives on the AP candidate row, not on the worklist row rendered from it.
+    A rate nobody supplied routes to the expensive band, because approval must never route
+    down on a missing fact.
+    """
     if protected:
         return "protected_payment_class"
     kind = _kind_of(item)
     if kind is ActionKind.EARLY_PAY_DISCOUNT:
-        # Unknown rate routes to the expensive band. Approval never routes down on a
-        # missing fact.
-        return "early_pay_discount_le_2pct" if item.probability_pct is None else ""
+        if discount_pct is None or discount_pct > EXPENSIVE_DISCOUNT_PCT:
+            return "early_pay_discount_gt_2pct"
+        return "early_pay_discount_le_2pct"
     return kind.value
 
 
@@ -247,9 +258,7 @@ def prepare(
             rows.append(item.model_copy(update={"status": WorklistStatus.QUEUED}))
             continue
 
-        route = matrix.route_for(
-            _matrix_key(item, discounts, protected), item.amount
-        )
+        route = matrix.route_for(_matrix_key(item, discounts, protected), item.amount)
         request = _card(
             item,
             verdict=verdict,
@@ -281,20 +290,12 @@ def prepare(
     )
 
 
-def _matrix_key(
-    item: WorklistItem, discounts: dict[str, Decimal], protected: set[str]
-) -> str:
-    if item.document_ref in protected:
-        return "protected_payment_class"
-    kind = _kind_of(item)
-    if kind is ActionKind.EARLY_PAY_DISCOUNT:
-        rate = discounts.get(item.document_ref or "")
-        # A missing rate routes to the expensive band: approval never routes down on a
-        # fact nobody supplied.
-        if rate is None or rate > EXPENSIVE_DISCOUNT_PCT:
-            return "early_pay_discount_gt_2pct"
-        return "early_pay_discount_le_2pct"
-    return kind.value
+def _matrix_key(item: WorklistItem, discounts: dict[str, Decimal], protected: set[str]) -> str:
+    return action_class(
+        item,
+        protected=item.document_ref in protected,
+        discount_pct=discounts.get(item.document_ref or ""),
+    )
 
 
 def _discount_pct(forgone: Money, amount: Money) -> Decimal:
@@ -344,9 +345,7 @@ def _card(
     )
 
 
-def _downside(
-    item: WorklistItem, verdict: RiskVerdict, recommendation: Recommendation
-) -> str:
+def _downside(item: WorklistItem, verdict: RiskVerdict, recommendation: Recommendation) -> str:
     """The field most systems leave blank. Sourced from the stress run, not invented."""
     if verdict.risk is RiskClass.BLOCKED:
         return verdict.basis
