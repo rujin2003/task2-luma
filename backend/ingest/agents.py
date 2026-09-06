@@ -1,6 +1,6 @@
 """Cartographer agent stage boundary.
 
-Stage 3's four sub-agents run on Person 2's runtime. Person 1 supplies the
+Stage 3's four sub-agents run on the agent runtime. The ingest pipeline supplies the
 input profiles and consumes the structured output. No raw financial rows are
 ever included in these payloads.
 """
@@ -60,7 +60,7 @@ class CartographerProposal(BaseModel):
 
 
 class CartographerAgents(Protocol):
-    """Person 2 implements this over their agent runtime."""
+    """Implemented over the agent runtime; see `backend/agents/`."""
 
     def propose(
         self, fingerprint: SchemaFingerprint, residue: tuple[TableProfile, ...]

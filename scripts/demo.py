@@ -23,11 +23,12 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.api.session import Session
 from backend.contracts import AgentRole
 from backend.contracts.approvals import ApprovalDecision, ApprovalRole
 from backend.orchestrator.cycle import CYCLE_STEPS
+from scripts.console import use_utf8_stdout
 
 RECORDINGS = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "llm"
 
@@ -45,13 +46,13 @@ def line(mark: str, text: str) -> None:
     print(f"  {mark} {text}")
 
 
-def blackout_provider(root: Path) -> FakeProvider:
+def blackout_provider(root: Path) -> ReplayProvider:
     """Every recording replaced by an injected timeout."""
     shutil.copytree(RECORDINGS, root, ignore=shutil.ignore_patterns("_*", "__*"))
     for role in AgentRole:
         payload = [{"agent": role.value, "default": True, "raises": "timeout"}]
         (root / f"{role.value}.json").write_text(json.dumps(payload), encoding="utf-8")
-    return FakeProvider(root)
+    return ReplayProvider(root)
 
 
 async def demo(session: Session) -> None:
@@ -187,6 +188,7 @@ async def demo(session: Session) -> None:
 
 
 async def main() -> None:
+    use_utf8_stdout()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--break-llm",

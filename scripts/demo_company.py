@@ -37,6 +37,8 @@ from typing import Any
 
 from sqlalchemy import create_engine, text
 
+from scripts.console import use_utf8_stdout
+
 AS_OF = date(2026, 3, 2)
 MANIFEST = Path("var/demo-companies.json")
 
@@ -1004,6 +1006,7 @@ def build_all(directory: Path, *, keys: list[str] | None = None) -> list[dict[st
 
 
 def main() -> None:
+    use_utf8_stdout()
     parser = argparse.ArgumentParser(description="Build the demo tenants' source databases.")
     parser.add_argument(
         "--dir",

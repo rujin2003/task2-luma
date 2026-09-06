@@ -1,4 +1,4 @@
-"""Failure-injection helpers for Person 1 degradation paths.
+"""Failure-injection helpers for the degradation paths.
 
 Dodo down and incomplete bank data must degrade rather than crash.
 """

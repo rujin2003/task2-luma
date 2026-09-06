@@ -19,7 +19,7 @@ from decimal import Decimal
 
 import pytest
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.contracts import AgentRole, ApprovalRole, Money, WorklistStatus
 from backend.contracts.approvals import (
     APPROVAL_CARD_FIELDS,
@@ -71,7 +71,7 @@ async def recommendation(bus, toolset, routing):
         covenants=await toolset.get_covenant_status(),
     )
     investigation = Investigation(
-        provider=FakeProvider(),
+        provider=ReplayProvider(),
         toolset=toolset,
         routing=routing,
         bus=bus,

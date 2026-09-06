@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from backend.agents.fake import FakeProvider, Recording
 from backend.agents.provider import (
     LLMProvider,
     LLMRequest,
@@ -17,6 +16,7 @@ from backend.agents.provider import (
     SchemaViolation,
     estimate_tokens,
 )
+from backend.agents.replay import Recording, ReplayProvider
 from backend.agents.routing import CONFIG_PATH, TokenBudget, load_routing
 from backend.contracts import AgentFinding, AgentRole, AgentStatus
 
@@ -113,11 +113,11 @@ def test_the_fingerprint_ignores_the_model_id() -> None:
 
 
 def test_the_fake_provider_satisfies_the_interface() -> None:
-    assert isinstance(FakeProvider(), LLMProvider)
+    assert isinstance(ReplayProvider(), LLMProvider)
 
 
 async def test_a_recorded_finding_replays_schema_valid() -> None:
-    provider = FakeProvider()
+    provider = ReplayProvider()
     finding, usage = await provider.complete(_request(), AgentFinding, timeout_s=30)
 
     assert isinstance(finding, AgentFinding)
@@ -128,20 +128,20 @@ async def test_a_recorded_finding_replays_schema_valid() -> None:
 
 
 async def test_replay_is_byte_identical_across_runs() -> None:
-    first, _ = await FakeProvider().complete(_request(), AgentFinding, timeout_s=30)
-    second, _ = await FakeProvider().complete(_request(), AgentFinding, timeout_s=30)
+    first, _ = await ReplayProvider().complete(_request(), AgentFinding, timeout_s=30)
+    second, _ = await ReplayProvider().complete(_request(), AgentFinding, timeout_s=30)
     assert first.model_dump_json() == second.model_dump_json()
 
 
 async def test_an_injected_timeout_is_raised_as_a_timeout() -> None:
     """The wave has to meet this in a test, not for the first time in the demo."""
-    provider = FakeProvider()
+    provider = ReplayProvider()
     with pytest.raises(LLMTimeout):
         await provider.complete(_request(AgentRole.DODO_REVENUE), AgentFinding, timeout_s=30)
 
 
 async def test_strict_mode_refuses_to_improvise(tmp_path: Path) -> None:
-    provider = FakeProvider(strict=True)
+    provider = ReplayProvider(strict=True)
     with pytest.raises(RecordingMissing) as caught:
         await provider.complete(_request(), AgentFinding, timeout_s=30)
     # The message carries the fingerprint, so adding the recording is mechanical.
@@ -150,7 +150,7 @@ async def test_strict_mode_refuses_to_improvise(tmp_path: Path) -> None:
 
 async def test_an_unrecorded_role_is_missing_not_empty() -> None:
     """The Cartographer has no recordings yet, and asking for one must say so."""
-    provider = FakeProvider()
+    provider = ReplayProvider()
     with pytest.raises(RecordingMissing):
         await provider.complete(_request(AgentRole.CARTOGRAPHER), AgentFinding, timeout_s=30)
 
@@ -171,7 +171,7 @@ async def test_a_recording_that_no_longer_matches_the_schema_fails_loudly(
         ),
         encoding="utf-8",
     )
-    provider = FakeProvider(tmp_path)
+    provider = ReplayProvider(tmp_path)
     with pytest.raises(SchemaViolation):
         await provider.complete(_request(), AgentFinding, timeout_s=30)
 

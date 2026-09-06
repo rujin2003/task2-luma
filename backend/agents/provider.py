@@ -8,7 +8,7 @@ Two rules make this interface what it is:
 * **The provider knows nothing about treasury.** It takes a system prompt, messages and a
   schema. Context awareness lives in the tool layer and the Context Pack, never here.
 
-`GeminiProvider` is the runtime target; `FakeProvider` replays recordings and is what
+`GeminiProvider` is the runtime target; `ReplayProvider` replays recordings and is what
 makes the golden-path demo deterministic and the test suite free.
 """
 
@@ -36,7 +36,7 @@ class SchemaViolation(LLMError):
 
 
 class RecordingMissing(LLMError):
-    """`FakeProvider` was asked for a call it has no recording of."""
+    """`ReplayProvider` was asked for a call it has no recording of."""
 
 
 class Msg(BaseModel):

@@ -7,7 +7,7 @@ DB Agent work on a schema nobody has seen before, and it does it with a lexicon 
 arithmetic rather than a model, for the same reason the covenant engine does: the
 answer has to be reproducible and reviewable.
 
-The output is a `CartographerProposal` — the same structure Person 2's agent runtime
+The output is a `CartographerProposal` — the same structure the agent runtime
 returns — so the pipeline treats a deterministic proposal and a model proposal
 identically, and can merge one into the other. What the model is for is the residue:
 columns this lexicon scored below threshold. Nothing here or there is trusted on its

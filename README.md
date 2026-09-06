@@ -1,179 +1,236 @@
 # WAR ROOM
 
-Weekly 13-week rolling direct-method cash forecast, with a war room escalation when the
-cycle detects a policy breach.
+**Autonomous treasury crisis response.** A weekly 13-week rolling direct-method cash
+forecast that, when it detects a policy breach, opens a war room: specialist agents
+investigate in parallel, disagree with each other, propose liquidity strategies, and
+stress-test them until one survives — then hand the CFO an evidence-backed plan that
+nobody can execute without a signature.
 
-Merged Person 1 spine + Person 2 agents/frontend:
+The organising rule of the whole codebase:
 
-- `backend/finance/` — Money, cadence, forecast, variance, accuracy, cash, covenants, controls, audit, execution
-- `backend/models/` + `alembic/` — SQLModel entities and migrations
-- `backend/seed/` — deterministic NovaTech generator (`make seed SEED=42`) with 26-week forecast history
-- `backend/tools/` — real `EngineToolset` behind the agent tool protocol
-- `backend/integrations/dodo/` — client, webhooks (Standard Webhooks), payout lag, metrics, decline taxonomy
-- `backend/ingest/` — **DB Agent**: connect → introspect → classify → map → reconcile → freeze → load → drift
-- `backend/agents/` + `backend/orchestrator/` — six specialists, weekly cycle, Commander path, stress/replan
-- `backend/api/` + `frontend/` — Data Source, Forecast, Agents, War Room, Recommendation, Evidence screens
+> **Agents reason. Code computes.**
+> No language model produces a number that reaches a financial decision. Agents choose
+> what to investigate, interpret evidence, argue trade-offs and explain themselves. Every
+> figure comes from deterministic, type-checked, float-free Python.
 
-## Setup
+---
 
-```bash
-python3 -m pip install -e ".[dev]"
-cp .env.example .env   # set GEMINI_API_KEY; WARROOM_LLM=gemini|fake|auto
-make ci
-make seed SEED=42
-make demo
-```
+## Quickstart
 
 ```bash
-# The four demo tenants' source databases (four different schemas)
-make demo-companies
+python -m pip install -e ".[dev]"
 
-# API (cycle, SSE, recommendation, approvals) — uses Gemini when WARROOM_LLM=gemini
-make serve
-
-# UI (Forecast / War Room / Recommendation / Evidence)
-cd frontend && npm install && npm run dev
+make seed SEED=42      # deterministic NovaTech ledger
+make demo              # the golden path, narrated, offline and free
 ```
 
-`make demo` and the test suite always use `FakeProvider` recordings (deterministic, free).
-Live Gemini is only used by `make serve` / the API session when `WARROOM_LLM` is `gemini`
-or `auto` with `GEMINI_API_KEY` set.
+`make demo` needs no API key and no network. It runs the real product — the same
+`Session` the API serves — against recorded model completions, and prints what actually
+happened. Nothing in it is scripted: if the orchestrator stops producing a step, the demo
+prints less rather than pretending.
 
-`make demo` resets a SQLite DB, seeds NovaTech, applies the shock pack, and asserts the
-golden spine narrative in `tests/fixtures/demo/`. It also runs the deterministic war-room
-path (fixture tools + FakeProvider): breach → investigation → conflict → stress failure →
-replan → recommendation.
+Run the UI:
 
-`make ci` runs ruff, mypy (strict on `backend/finance`), the no-float gate, and pytest.
+```bash
+make serve                                  # FastAPI on 127.0.0.1:8000
+cd frontend && npm install && npm run dev   # Next.js on 127.0.0.1:3000
+```
 
-## The DB Agent
+Verify everything:
 
-A prospect's POC pastes their database URL — credentials included — and the agent works
-out what the schema means, then loads it into our model. Eight stages, one of which may
-call a model:
+```bash
+make ci     # ruff, mypy (strict on backend/finance), the no-float gate, 722 tests
+```
+
+---
+
+## The demo, in one screen
+
+`make demo` walks the full incident. Real output, abridged:
 
 ```text
-connect → introspect → classify → map → reconcile → freeze → load → drift
+  Stress
+  x financing-bridge      under Combined adverse case (-17.3%):  19,825,621 USD at W6
+  v working-capital       under Combined adverse case (-17.3%):  20,086,221 USD at W6
+
+  - AR recovery shortfall: 90th percentile of this company's own W6 error over 26 weeks
+
+  Approvals
+  ACTION               Defer BILL-8863 (Globex Logistics) by 30d
+  AMOUNT               620,000.00 USD
+  RISK                 not reversible without telling the counterparty
+  EVIDENCE             ap_ledger:BILL-8863#due_date
+  WHAT COULD GO WRONG  Under Combined adverse case an earlier bundle fell 174,378 USD
+                       short of the floor; this row is subject to the same error.
+  APPROVAL REQUIRED    cfo
+
+  x preparer tried to sign their own card: analyst@novatech prepared this request
+  v signed by cfo@novatech (cfo) against fv-2026-W10
 ```
 
-* **connect** probes the credential and reports whether it can write. Ingestion stays
-  read-only regardless; write capability is for the execution path later.
-* **introspect** reads structure only — names, types, keys, row counts, and format
-  *shapes* sampled from text columns. No financial value leaves the tenant.
-* **classify** is a deterministic lexicon (`backend/ingest/columns.py`): token synonyms
-  plus a type gate, scored in basis points. `cust_code`, `client_code` and `customerCode`
-  all resolve to the same canonical field. A model is called only on the residue.
-* **reconcile** holds the mapping to the tenant's own trial-balance totals. A mapping
-  that does not tie out is rolled back rather than committed — wrong mappings fail
-  arithmetically, which is what makes it safe for a small model to propose one.
-* **drift** re-hashes the schema on every sync and holds ingestion when it changes.
+Three things in that output are the point of the project:
 
-The credential is held in memory for the length of the onboarding and never persisted,
-logged or echoed; responses carry a redacted URL.
+1. **The first plan fails.** `financing-bridge` breaks the floor under stress, so the
+   Commander replans and `working-capital` is what reaches the CFO. The failure is not
+   staged — it is recomputed every run.
+2. **The stressors are calibrated, not invented.** `-17.3%` is the 90th percentile of
+   _this company's own_ week-6 forecast error across 26 weeks of history.
+3. **Segregation of duties is enforced in code.** The preparer is refused their own
+   signature. That is a hard failure, not a warning.
+
+Run `python -m scripts.demo --break-llm` for the same Monday with **every model call
+timing out**. The cycle still publishes, the war room still opens on the same breach, the
+Commander still selects a named plan, and every fallback says so out loud.
+
+---
+
+## How it works
+
+```text
+  Weekly cycle (10 steps, 7 automated)
+        |  refresh actuals -> variance bridge -> reforecast -> accuracy -> exceptions
+        v
+  Policy check ---- breach? ----> War room opens
+                                       |
+        +--------------+---------------+---------------+--------------+
+        v              v               v               v              v
+    Forecast       Variance      AR Collections   AP Optimization   Dodo Revenue
+        +--------------+---------------+---------------+--------------+
+                                       |          ^
+                                 Supplier Risk ---+   (rejects AP's deferrals)
+                                       |
+                                  Conflict resolution
+                                       v
+                          Scenario bundles -> constraint check
+                                       v
+                              Stress test --> fail --> replan --+
+                                       |                        |
+                                       v<-----------------------+
+                          Recommendation -> DoA routing -> approval -> execution
+```
+
+**Six specialists** — Forecast, Variance, AR Collections, AP Optimization, Supplier Risk,
+Dodo Revenue — plus coordinating roles: Commander, Conflict Resolution, Stress Test,
+Covenant Explainer, Cartographer. The Commander does not call all of them every time; it
+decomposes the specific breach.
+
+Supplier Risk exists to **disagree**. When it rejects an AP deferral, that cash genuinely
+leaves the strategy, which genuinely changes whether the strategy survives stress. The
+disagreement is load-bearing, not decorative.
+
+---
+
+## Financial integrity
+
+This is the part built for a treasury reviewer rather than a demo audience.
+
+| Guarantee             | How it is enforced                                                 |
+| --------------------- | ------------------------------------------------------------------ |
+| No floats in money    | `make check-float` — a build gate over 45 modules                  |
+| Exact arithmetic      | `Money` in integer minor units with explicit currency              |
+| Types                 | `mypy --strict` on `backend/finance`                               |
+| Determinism           | seeded generation; identical dumps across runs (`tests/seed/`)     |
+| Reproducible agents   | recorded completions replayed by request fingerprint               |
+| Cost control          | per-role token budgets in `config/models.yaml`, asserted in CI     |
+| Segregation of duties | preparer, reviewer and approver must be three people               |
+| Provenance            | every figure traces to source, calculation, assumption, confidence |
+
+Constraints are **hard** and declarative: payroll and tax cannot be delayed, minimum cash
+and 30-day liquidity floors, revolver utilisation ceilings, per-supplier maximum delays.
+They live in `config/treasury_policy.yaml`, not in an `if` statement.
+
+Delegation of authority lives in `config/doa_matrix.yaml` as amount-banded routes. If an
+edit makes an amount match two bands, `route_approval` **rejects it** rather than quietly
+approving at the lower level.
+
+---
+
+## Failure is a first-class path
+
+`tests/e2e/test_degraded_paths.py` asserts what happens when things break:
+
+- every model call times out → the cycle still publishes, with named fallbacks
+- Supplier Risk is missing → the loss of the adversary is _visible in the result_
+- an agent returns malformed output → it is not a finding, and the investigation closes
+- Dodo is unreachable → collections are not risk-adjusted, confidence drops, and the
+  recommendation is flagged for human review
+
+A degraded run still cannot be self-approved and still cannot skip execution gates.
+
+---
+
+## Dodo Payments
+
+Dodo is a financial input, not a checkout button. `backend/integrations/dodo/` is a
+**read-only** boundary — write endpoints are deliberately absent — covering the client,
+Standard Webhooks signature verification, payout-lag modelling, a decline taxonomy and
+success-rate metrics.
+
+Declining payment success becomes at-risk collections, which changes the forecast, which
+is what trips the breach that opens the war room. Nothing outside that package sees Dodo's
+HTTP details; the rest of the system sees normalised `PaymentEvent`s.
+
+---
+
+## Bring your own ledger
+
+`backend/ingest/` is the **Schema Cartographer**: point it at a database whose schema you
+have never seen, and it introspects, matches against templates, reconciles, freezes a
+mapping and then watches for drift.
 
 ```bash
-make demo-companies              # build the four demo source databases
-make onboard TENANT=northgate    # walk all eight stages on the command line
+make demo-companies                 # four tenants, four different schemas
+make onboard TENANT=northgate       # walk the DB agent end to end
 ```
 
-### Demo tenants
+Only column names, types and format signatures are ever sent to a model — never financial
+rows.
 
-Four companies, four genuinely different source schemas, so a successful mapping proves
-something about a schema nobody shipped:
-
-| Tenant | Schema style | Amounts |
-|---|---|---|
-| Helios Robotics | SAP-flavoured ERP (`ar_open_items`, `gross_amt`, `due_dt`) | decimal major units |
-| Lumen Health Systems | Stripe / QuickBooks export (`invoices`, `amount_due`) | decimal major units |
-| Northgate Freight | legacy warehouse (`receivable_ledger`, `amount_cents`) | integer minor units |
-| Aurora Retail Group | camelCase app DB (`openReceivables`, `grossAmount`) | decimal major units, multi-currency |
-
-## One data source, or nothing
-
-Every screen in the product is a view of one data source, and there is no default. Before
-a source is loaded the Forecast, Agents, War Room, Recommendation, Approvals and Evidence
-screens all render their empty state and the agent roster refuses to start anything —
-`POST /api/agents/<role>/run` is a 409, not an empty finding.
-
-Loading one is the only way to fill them:
-
-| | |
-|---|---|
-| **A tenant** | Walk the DB Agent on `/onboarding`. A load that reconciles becomes the source. |
-| **The recorded demo** | One button on the same screen. NovaTech, deterministic, labelled synthetic everywhere it appears. |
-
-Binding a source **clears everything the last one produced** — the cycle, the agent runs,
-the investigation, the approval cards and the audit log go with it. That is enforced by
-constructing a new `Session` (`backend/api/session.py:bind`) rather than by resetting
-fields one at a time, so there is no half-cleared state to get wrong, and it happens on
-*connect* rather than on load: a half-finished onboarding cannot leave the previous
-tenant's numbers on screen either.
-
-`GET /api/data-source` answers "what am I looking at" and is the first call every screen
-makes. `GET /api/data-source/position` is the shared position — liquidity, the 13-week
-series, aging, drivers, constraints and the capability manifest — read through the tool
-layer, so the number on the Forecast screen is the number the Cash Forecast agent argues
-about, from the same code path.
-
-## Agents over a tenant's own ledger
-
-`backend/tools/tenant.py` is the tool layer over rows the DB Agent has just loaded. A
-source database gives six entities — customers, vendors, invoices, vendor invoices, bank
-accounts, bank movements — and not a forecast history, a covenant, or a Dodo feed. So the
-toolset derives what those rows can legitimately support and refuses what they cannot:
-
-* **Derived** — a direct-method 13-week forecast (open receivables at their due date
-  weighted by the aging band's collection probability, open payables in full, opening cash
-  from settled bank movements), the aging summary, ranked collection and deferral
-  candidates, a supplier profile, the policy thresholds.
-* **Refused, with the reason** — no variance bridge without a prior published version, no
-  measured error percentiles without forecast history, no covenant status without
-  facilities, no Dodo breakdown without Dodo. Each raises `ToolError`, the agent records
-  `degraded`, and the screen names the agent and what it was missing.
-
-The modelling choices that are not in a tenant's data — a collection curve, a deferral
-window — live in `config/tenant_terms.yaml`, versioned, and every derived figure carries
-the band it came from in its own basis string. The liquidity floor is per source and set
-on the Forecast screen: NovaTech's $15M floor is NovaTech's, and holding a freight
-company's $12M book to it would put someone else's number on the screen.
-
-## Agent space
-
-`/war-room` opens on the agent console, and `/agents` is the same console with the roster
-foregrounded. Both show the six specialists — job, tool allowlist, routed model,
-**dependencies** — each with a **Start agent** button, above a graph of who feeds whom.
-
-The dependencies are real, not decoration. Supplier Risk exists to challenge AP
-Optimisation's proposals, so its card says so and its edge is drawn dashed until AP has
-actually produced some; run AP first and Supplier Risk argues with its live proposals
-(and, on the demo ledger, rejects two of them). Nothing is greyed out: an agent that can
-only answer half the question answers half of it and reports what it was missing, which is
-more useful than a disabled button.
-
-A hand-started run goes through `AgentRunner` like any other: same allowlist, same context
-budget, same evidence validator, same `AgentRun` on the same event bus, so it shows up in
-the War Room stream alongside the Commander's wave and its findings are exactly as
-citable. Citations use the tenant's own document key — `ar_ledger:AR-4099` — so the
-Evidence Explorer shows the invoice number that is on the invoice.
+---
 
 ## Layout
 
 ```text
-backend/finance/          Money, FX, policy, provenance, forecast engine, controls
-backend/contracts/        shared Pydantic contracts (agents + engine DTOs)
-backend/tools/            tool protocol, FixtureToolset, EngineToolset, TenantToolset
-backend/models/           SQLModel entities
-backend/seed/             NovaTech generator + shocks
-backend/integrations/     Dodo adapter (webhooks, payout lag, metrics)
-backend/ingest/           DB Agent: introspect, classify, map, reconcile, load, drift
-backend/agents/           specialist agents and LLM providers
-backend/orchestrator/     weekly cycle, investigation, stress, replan
-backend/api/              FastAPI data source / cycle / SSE / recommendation / approvals
-frontend/                 Next.js Data Source / Forecast / Agents / War Room / Recommendation / Evidence UI
-config/                   TreasuryPolicy, tenant terms, model routing
-tests/                    finance, seed, tools, agents, ingest, integrations, e2e
-docs/                     workflow, phases, schema adaptation
-person1.md / person2.md   ownership plans
+backend/finance/        Money, FX, policy, forecast engine, covenants, controls, audit
+backend/contracts/      shared Pydantic contracts (agents + engine DTOs)
+backend/tools/          tool protocol; EngineToolset (real) and FixtureToolset (recorded)
+backend/agents/         six specialists, Gemini and replay providers, routing, budgets
+backend/orchestrator/   weekly cycle, investigation, conflicts, stress, replan, approvals
+backend/integrations/   Dodo adapter (webhooks, payout lag, metrics, decline taxonomy)
+backend/ingest/         Schema Cartographer and mapping freeze
+backend/models/         SQLModel entities + alembic migrations
+backend/seed/           deterministic NovaTech generator and shock packs
+backend/api/            FastAPI: cycle, war-room SSE, recommendation, approvals, evidence
+frontend/               Next.js: Forecast, War Room, Recommendation, Evidence, Approvals
+config/                 treasury policy, DoA matrix, scoring weights, model routing
+tests/                  finance, seed, tools, agents, ingest, integrations, api, e2e
+docs/                   workflow, phases, LLM strategy, schema adaptation
 ```
 
-Read `docs/WORKFLOW.md` then `docs/PHASES.md` before changing contracts.
+Read `docs/WORKFLOW.md`, then `docs/PHASES.md`, before changing a contract.
+
+---
+
+## Configuration
+
+| Variable         | Meaning                                                             |
+| ---------------- | ------------------------------------------------------------------- |
+| `WARROOM_LLM`    | `replay` (offline, deterministic — CI and demo), `gemini`, or `auto` |
+| `GEMINI_API_KEY` | required for `gemini`; `auto` falls back to `replay` without it      |
+| `DATABASE_URL`   | defaults to `sqlite:///novatech.db`; Postgres supported via psycopg  |
+
+Copy `.env.example` to `.env`. `make gemini-smoke` verifies a live model before a demo.
+
+Model ids, temperatures, per-role token budgets and executor concurrency all live in
+`config/models.yaml` — swapping providers is a change to that file and nothing else.
+
+---
+
+## Demo data is synthetic
+
+NovaTech is fictional: ~$450M revenue, multiple entities, currencies, bank accounts,
+customers, vendors, a revolving facility and covenants. The data is internally consistent
+— every invoice ties to a customer, a payment history, an AR balance and a forecast
+contribution — with deliberate anomalies injected as shock packs.
+
+No real financial data is present anywhere in this repository.

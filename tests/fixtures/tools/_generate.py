@@ -1,7 +1,7 @@
 """Regenerates the tool fixtures in this directory.
 
 These are placeholders in the shape of the real contract, kept here so the runtime and the
-six agents are buildable before Person 1's engine lands. When their seeded data arrives,
+six agents are exercisable without a database. When seeded data is loaded,
 replace the JSON -- the payload models are the part that must not move.
 
     python tests/fixtures/tools/_generate.py
@@ -494,7 +494,7 @@ ev(
     total="8420000.00 USD",
     # `derived_from` is how the Evidence Explorer walks an aggregate down to the rows it
     # was computed from. It lives in `fields` because the payload contract has no
-    # provenance edge yet -- that is a shared-contract change to agree at Merge Point 1.
+    # provenance edge yet -- that would be a change to the shared contract.
     derived_from=", ".join(
         [
             "ar_ledger:INV-10482#amount_due",

@@ -1,4 +1,4 @@
-"""Fixture JSON must stay schema-valid so Person 2 can code against them."""
+"""Fixture JSON must stay schema-valid so the agent layer can code against it."""
 
 from __future__ import annotations
 

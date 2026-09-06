@@ -1,9 +1,9 @@
-"""The HTTP surface. Person 2's half of the boundary with Person 1's engine.
+"""The HTTP surface: the boundary between the UI and the engine.
 
 Assembly only: every router here is thin, and the rule it follows is the same one the
 tool layer follows -- the API does not compute anything. It sequences calls into the
 orchestrator, renders what comes back, and turns a domain refusal into a status code the
-UI can branch on. A number that appears in a response was computed by Person 1's engine
+UI can branch on. A number that appears in a response was computed by the finance engine
 and travelled here through a typed contract.
 """
 

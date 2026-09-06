@@ -43,7 +43,7 @@ seed-trivial: migrate
 
 # Fixture-backed Monday: cycle → breach → war room → stress fail → replan → recommendation.
 demo:
-	WARROOM_LLM=fake $(PYTHON) -m scripts.demo
+	WARROOM_LLM=replay $(PYTHON) -m scripts.demo
 
 serve:
 	env -u WARROOM_LLM $(PYTHON) -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000

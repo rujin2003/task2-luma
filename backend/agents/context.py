@@ -7,7 +7,7 @@ asked to do.
 
 Two properties are load-bearing:
 
-* **Deterministic.** The same inputs render the same string, so `FakeProvider` recordings
+* **Deterministic.** The same inputs render the same string, so `ReplayProvider` recordings
   keyed on the request fingerprint stay valid.
 * **Bounded.** The digest is trimmed to its budget rather than allowed to grow with the
   investigation. Cross-agent context grows linearly and slowly, not quadratically.

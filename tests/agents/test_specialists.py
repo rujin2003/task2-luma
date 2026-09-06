@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import ModelRouting
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import SPECIALISTS, ApOptimizationAgent, build
@@ -29,7 +29,7 @@ from tests.fixtures.llm._record import AP_PROPOSALS, PAYROLL_PRESSURE_TASK
 @pytest.fixture
 def runner(bus: EventBus, toolset: FixtureToolset, routing: ModelRouting) -> AgentRunner:
     return AgentRunner(
-        provider=FakeProvider(strict=True),
+        provider=ReplayProvider(strict=True),
         toolset=toolset,
         routing=routing,
         bus=bus,

@@ -27,7 +27,7 @@ from pathlib import Path
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.api.session import Session, reset_session
 from backend.contracts import AgentRole
 from backend.main import create_app
@@ -42,17 +42,17 @@ RECORDINGS = Path(__file__).resolve().parents[1] / "fixtures" / "llm"
 WAVE_BUDGET_S = 60.0
 
 
-def injected(tmp_path: Path, failures: dict[AgentRole, str]) -> FakeProvider:
+def injected(tmp_path: Path, failures: dict[AgentRole, str]) -> ReplayProvider:
     """The real recordings, with one role's answers replaced by a failure."""
     root = tmp_path / "llm"
     shutil.copytree(RECORDINGS, root, ignore=shutil.ignore_patterns("_*", "__*"))
     for role, mode in failures.items():
         payload = [{"agent": role.value, "default": True, "raises": mode}]
         (root / f"{role.value}.json").write_text(json.dumps(payload), encoding="utf-8")
-    return FakeProvider(root)
+    return ReplayProvider(root)
 
 
-async def drive(provider: FakeProvider):
+async def drive(provider: ReplayProvider):
     """A client over a session wired to a deliberately broken provider."""
     reset_session(Session(provider=provider))
     transport = ASGITransport(app=create_app())
@@ -92,7 +92,7 @@ async def blackout(tmp_path):
 
 
 async def test_the_cycle_still_publishes_when_no_model_answers(blackout) -> None:
-    """The forecast is Person 1's engine. No agent computes it, so none can block it."""
+    """The forecast is the deterministic engine. No agent computes it, so none can block it."""
     response = await blackout.post("/api/cycle/run")
 
     assert response.status_code == 200

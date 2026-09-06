@@ -5,9 +5,9 @@ covenant ratio, it can only call `get_covenant_status()`. That single rule is wh
 actually delivers "use deterministic code for financial arithmetic" -- the model
 structures and explains, the engine computes.
 
-Person 1 implements `Toolset` over the real engine; Person 2 codes against the Protocol
-from day one. `FixtureToolset` in `backend/tools/fixtures.py` satisfies the same shape,
-so nothing downstream knows or cares which one it has.
+`EngineToolset` implements `Toolset` over the real engine; `FixtureToolset` in
+`backend/tools/fixtures.py` satisfies the same shape from recorded JSON, so nothing
+downstream knows or cares which one it has.
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ class ToolNotAllowed(ToolError):
 
 @runtime_checkable
 class Toolset(Protocol):
-    """Frozen signatures. Person 1 writes the bodies; both review a change to this file."""
+    """Frozen signatures. The engine writes the bodies; this file is the contract."""
 
     # --- shared position -------------------------------------------------------------
 

@@ -16,6 +16,7 @@ from pathlib import Path
 from backend.api import store
 from backend.ingest.onboarding import Onboarding
 from backend.ingest.validate import BalanceSnapshot
+from scripts.console import use_utf8_stdout
 from scripts.demo_company import BY_KEY, MANIFEST, build_all, major
 
 
@@ -30,6 +31,7 @@ def _manifest(directory: Path, tenant: str) -> dict[str, object]:
 
 
 def main() -> int:
+    use_utf8_stdout()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tenant", default="helios", choices=sorted(BY_KEY))
     parser.add_argument("--dir", default="var/demo")

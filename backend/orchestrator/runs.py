@@ -1,4 +1,4 @@
-"""Where `AgentRun` records live until Person 1's tables land.
+"""Where `AgentRun` records live.
 
 Every run is kept: the completions, the refusals, the timeouts and the runs whose evidence
 was rejected. That is the point -- "the AR agent timed out and we proceeded on five of six
@@ -6,7 +6,7 @@ findings" is exactly the kind of thing a treasurer is entitled to see afterwards
 is the kind of thing that quietly disappears when only successes are stored.
 
 `RunStore` is the seam. The in-memory store is what the tests and the demo use; the JSONL
-store gives a durable audit trail without a schema decision that belongs to Person 1.
+store gives a durable audit trail without coupling the orchestrator to the ORM.
 """
 
 from __future__ import annotations

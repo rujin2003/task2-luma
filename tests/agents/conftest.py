@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import ModelRouting, load_routing
 from backend.contracts import AgentFinding, AgentRole, AgentStatus
 from backend.orchestrator.bus import EventBus
@@ -87,10 +87,10 @@ def finding_payload(
 
 def recording_provider(
     root: Path, recordings: dict[AgentRole, dict[str, Any]], *, strict: bool = False
-) -> FakeProvider:
+) -> ReplayProvider:
     """Write one default recording per role and return a provider that replays them."""
     root.mkdir(parents=True, exist_ok=True)
     for role, recording in recordings.items():
         payload = [{"agent": role.value, "default": True, **recording}]
         (root / f"{role.value}.json").write_text(json.dumps(payload), encoding="utf-8")
-    return FakeProvider(root, strict=strict)
+    return ReplayProvider(root, strict=strict)

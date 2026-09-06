@@ -15,8 +15,8 @@ against the real event ordering, the real replan history and the real refusals, 
 the ugly parts. `tests/unit/test_frontend_fixture_parity.py` fails the build if the two
 sides drift.
 
-When Person 1's engine lands behind the tool signatures, this script keeps working: it
-goes through the same `Session` the API does, so it records whatever the engine returns.
+The script goes through the same `Session` the API does, so it records whatever the
+engine actually returns rather than a separately-maintained idea of it.
 """
 
 from __future__ import annotations

@@ -95,8 +95,8 @@ class ReviewLedger:
     """Overrides recorded this cycle, and the gate that publishes the version.
 
     Held in memory for the same reason `RunStore` is: the durable home for these rows is
-    Person 1's `Override` and `ForecastVersion` tables, and inventing a schema for them
-    here would be inventing someone else's decision.
+    the `Override` and `ForecastVersion` tables; duplicating that schema here would put
+    two sources of truth behind the same rows.
     """
 
     # Publishing locks a version, so the roles that may do it are the accountable ones in

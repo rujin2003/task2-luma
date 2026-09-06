@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from pydantic import BaseModel
 
-from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMRequest, LLMTimeout
+from backend.agents.replay import ReplayProvider
 from backend.contracts import (
     ActionKind,
     AgentFinding,
@@ -196,7 +196,7 @@ async def wave(bus, toolset, routing):
     role default happened to fall into.
     """
     commander = Commander(
-        provider=FakeProvider(strict=True),
+        provider=ReplayProvider(strict=True),
         toolset=toolset,
         routing=routing,
         bus=bus,
@@ -219,7 +219,7 @@ async def test_the_seeded_data_produces_a_real_conflict(wave) -> None:
 
 
 async def test_resolution_dispatches_a_scoped_follow_up(wave, bus, toolset, routing) -> None:
-    res = await resolver(FakeProvider(), bus, toolset, routing)
+    res = await resolver(ReplayProvider(), bus, toolset, routing)
 
     resolved = await res.resolve(detect(wave)[0], wave)
 
@@ -232,7 +232,7 @@ async def test_resolution_dispatches_a_scoped_follow_up(wave, bus, toolset, rout
 
 
 async def test_resolution_upholds_a_side_on_rows_that_resolve(wave, bus, toolset, routing) -> None:
-    res = await resolver(FakeProvider(), bus, toolset, routing)
+    res = await resolver(ReplayProvider(), bus, toolset, routing)
 
     resolved = await res.resolve(detect(wave)[0], wave)
 
@@ -252,7 +252,7 @@ async def test_a_resolution_citing_rows_nobody_produced_is_discarded(
         name = "fabricator"
 
         def __init__(self) -> None:
-            self._specialists = FakeProvider()
+            self._specialists = ReplayProvider()
 
         async def complete[OutputT: BaseModel](
             self, request: LLMRequest, schema: type[OutputT], *, timeout_s: float
@@ -285,7 +285,7 @@ async def test_a_dead_resolver_still_settles_the_conflict(wave, bus, toolset, ro
         name = "dead"
 
         def __init__(self) -> None:
-            self._specialists = FakeProvider()
+            self._specialists = ReplayProvider()
 
         async def complete[OutputT: BaseModel](
             self, request: LLMRequest, schema: type[OutputT], *, timeout_s: float
@@ -307,7 +307,7 @@ async def test_a_dead_resolver_still_settles_the_conflict(wave, bus, toolset, ro
 
 
 async def test_the_resolution_is_streamed_with_its_evidence(wave, bus, toolset, routing) -> None:
-    res = await resolver(FakeProvider(), bus, toolset, routing)
+    res = await resolver(ReplayProvider(), bus, toolset, routing)
 
     await res.resolve(detect(wave)[0], wave)
 

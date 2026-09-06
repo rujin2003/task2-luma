@@ -23,8 +23,8 @@ from typing import Any
 from pydantic import BaseModel
 
 from backend.agents.context import Incident
-from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMRequest, estimate_tokens
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import load_routing
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import build
@@ -480,7 +480,7 @@ async def followup_fingerprint() -> tuple[str, TokenUsage]:
 async def golden_wave() -> list[Any]:
     """Run the seeded investigation once, for recordings that depend on its output."""
     commander = Commander(
-        provider=FakeProvider(),
+        provider=ReplayProvider(),
         toolset=FixtureToolset(),
         routing=load_routing(),
         bus=EventBus(),

@@ -440,7 +440,7 @@ class Forecast:
         return min(self.available_liquidity_by_week[:weeks])
 
     def to_grid(self, *, retrieved_at: datetime | None = None) -> ForecastGrid:
-        """The frozen contract view Person 2's agents consume."""
+        """The frozen contract view the agents consume."""
         stamp = retrieved_at if retrieved_at is not None else self.as_of
         lines = tuple(
             ForecastLineDTO(

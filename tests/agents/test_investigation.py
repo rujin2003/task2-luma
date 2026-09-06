@@ -11,7 +11,7 @@ from datetime import date
 
 import pytest
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.contracts import (
     ActionKind,
     AgentRole,
@@ -45,7 +45,7 @@ async def check(toolset):
 @pytest.fixture
 async def result(bus, toolset, routing, check):
     investigation = Investigation(
-        provider=FakeProvider(),
+        provider=ReplayProvider(),
         toolset=toolset,
         routing=routing,
         bus=bus,

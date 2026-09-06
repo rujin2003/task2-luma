@@ -1,5 +1,4 @@
-"""A `Toolset` backed by recorded JSON. This is what the whole product is built against
-until Person 1's engine lands behind the same signatures at Merge Point 1.
+"""A `Toolset` backed by recorded JSON -- the deterministic twin of `EngineToolset`.
 
 It is not a mock in the throwaway sense: the fixtures are validated into the same payload
 models the engine will return, so a fixture that drifts from the contract fails the test

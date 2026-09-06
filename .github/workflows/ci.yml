@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [dev, main, "p1/**", "p2/**"]
+    branches: [main, dev]
   pull_request:
 
 jobs:

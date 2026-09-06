@@ -1,4 +1,8 @@
-"""Tool signatures. Bodies raise NotImplementedError until the engine lands."""
+"""The tool surface as plain function signatures -- the readable index of `Toolset`.
+
+Bodies raise `NotImplementedError` by design: this module documents and type-checks the
+contract, while `EngineToolset` and `FixtureToolset` provide the implementations.
+"""
 
 from __future__ import annotations
 

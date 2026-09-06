@@ -7,7 +7,7 @@ two HTTP requests. This does.
 
 It is in-memory and single-tenant, and that is a stated limitation rather than an
 oversight. The durable home for a published version, an override and an audit entry is
-Person 1's tables; persisting them here would be inventing their schema from the wrong
+the persistence layer; persisting them here would duplicate that schema from the wrong
 side of the boundary. What this must get right is the *ordering*, because the ordering is
 the product:
 
@@ -28,8 +28,8 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from backend.agents.factory import build_provider
-from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMProvider
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import ModelRouting, load_routing
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import SPECIALISTS
@@ -146,7 +146,7 @@ class Session:
         self.toolset: Toolset = toolset or FixtureToolset()
         # Constructors and tests stay on fixtures. The API process opts into Gemini via
         # get_session() -> build_provider(), never by silently reaching the network here.
-        self.provider: LLMProvider = provider or FakeProvider()
+        self.provider: LLMProvider = provider or ReplayProvider()
         self.routing = routing or load_routing()
         self.bus = EventBus()
         self.runs = InMemoryRunStore()
@@ -448,7 +448,7 @@ def _release(previous: Session | None, replacement: Session) -> None:
 def reset_session(session: Session | None = None) -> Session:
     """Start Monday again. Used by the demo script and by the e2e tests.
 
-    Bare `reset_session()` keeps FakeProvider so CI never dials Gemini. Pass an explicit
+    Bare `reset_session()` keeps ReplayProvider so CI never dials Gemini. Pass an explicit
     `Session(provider=...)` (or call `get_session()` in the API process) for live models.
     """
     global _session
@@ -494,7 +494,7 @@ def _provider() -> LLMProvider:
 
     Which model backs the agents is a property of the process, not of the tenant, and
     rebuilding it from the environment on every bind would mean a test that carefully
-    installed `FakeProvider` starts dialling Gemini the moment a source is loaded.
+    installed `ReplayProvider` starts dialling Gemini the moment a source is loaded.
     """
     if _session is not None:
         return _session.provider

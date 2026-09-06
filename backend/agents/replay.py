@@ -1,4 +1,4 @@
-"""`FakeProvider` -- replays recorded completions instead of calling a model.
+"""`ReplayProvider` -- replays recorded completions instead of calling a model.
 
 This is the most load-bearing piece of test infrastructure in the project. It makes the
 golden-path demo byte-identical on every run, makes the test suite free, and lets the six
@@ -56,10 +56,10 @@ class Recording(BaseModel):
         return self
 
 
-class FakeProvider:
+class ReplayProvider:
     """Replays `tests/fixtures/llm/<role>.json`. Deterministic by construction."""
 
-    name = "fake"
+    name = "replay"
 
     def __init__(self, root: Path | None = None, *, strict: bool = False) -> None:
         self.root = root or RECORDING_ROOT

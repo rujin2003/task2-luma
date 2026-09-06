@@ -9,8 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMProvider
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import ModelRouting, load_routing
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import build
@@ -57,7 +57,7 @@ async def run_monday_cycle(
     incident_kind: str | None = None,
 ) -> CycleResult:
     """Run the ten-step cycle; open an investigation when policy is breached."""
-    provider = provider or FakeProvider(strict=True)
+    provider = provider or ReplayProvider(strict=True)
     routing = routing or load_routing()
     forecast = await tools.get_forecast_summary()
     version_id = forecast.version_id

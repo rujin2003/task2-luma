@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from pydantic import BaseModel
 
-from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMRequest, LLMTimeout, RecordingMissing
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import ModelRouting
 from backend.contracts import AgentRole, AgentStatus, EventType, SourceSystem, TokenUsage
 from backend.contracts.constraints import ConstraintKind
@@ -48,7 +48,7 @@ class FixedChoice:
     def __init__(self, plan_id: str, rationale: str = "test fixture") -> None:
         self.plan_id = plan_id
         self.rationale = rationale
-        self._specialists = FakeProvider()
+        self._specialists = ReplayProvider()
 
     async def complete[OutputT: BaseModel](
         self, request: LLMRequest, schema: type[OutputT], *, timeout_s: float
@@ -145,7 +145,7 @@ def test_the_fallback_is_the_widest_runnable_plan() -> None:
 
 
 async def test_the_golden_path_selects_the_full_sweep(bus, toolset, routing) -> None:
-    cmd = await commander(FakeProvider(strict=True), bus, toolset, routing)
+    cmd = await commander(ReplayProvider(strict=True), bus, toolset, routing)
 
     dispatch = await cmd.plan((ConstraintKind.MIN_CASH,))
 
@@ -198,7 +198,7 @@ async def test_a_throttled_planning_call_still_produces_an_investigation(
 
 async def test_the_commander_stays_inside_its_allowlist(bus, toolset, routing) -> None:
     """It plans from shape and position. The variance bridge is not its to read."""
-    cmd = await commander(FakeProvider(strict=True), bus, toolset, routing)
+    cmd = await commander(ReplayProvider(strict=True), bus, toolset, routing)
 
     await cmd.plan((ConstraintKind.MIN_CASH,))
 
@@ -211,7 +211,7 @@ async def test_an_unrecorded_incident_fails_loudly_under_strict_replay(
 ) -> None:
     """The golden path must not quietly fall back to a plausible default."""
     cmd = Commander(
-        provider=FakeProvider(strict=True),
+        provider=ReplayProvider(strict=True),
         toolset=toolset,
         routing=routing,
         bus=bus,
@@ -231,7 +231,7 @@ async def test_an_unrecorded_incident_fails_loudly_under_strict_replay(
 
 
 async def test_the_wave_runs_every_invoked_agent(bus, toolset, routing) -> None:
-    cmd = await commander(FakeProvider(), bus, toolset, routing)
+    cmd = await commander(ReplayProvider(), bus, toolset, routing)
 
     dispatch = await cmd.investigate(await cmd.plan((ConstraintKind.MIN_CASH,)))
 
@@ -243,7 +243,7 @@ async def test_supplier_risk_is_handed_the_ap_agents_actual_proposals(
     bus, toolset, routing
 ) -> None:
     """Rejecting a specific proposal is not something you can do from a digest line."""
-    cmd = await commander(FakeProvider(), bus, toolset, routing)
+    cmd = await commander(ReplayProvider(), bus, toolset, routing)
 
     dispatch = await cmd.investigate(await cmd.plan((ConstraintKind.MIN_CASH,)))
 
@@ -256,7 +256,7 @@ async def test_supplier_risk_is_handed_the_ap_agents_actual_proposals(
 
 
 async def test_supplier_risk_runs_after_the_agent_it_challenges(bus, toolset, routing) -> None:
-    cmd = await commander(FakeProvider(), bus, toolset, routing)
+    cmd = await commander(ReplayProvider(), bus, toolset, routing)
 
     dispatch = await cmd.investigate(await cmd.plan((ConstraintKind.MIN_CASH,)))
 

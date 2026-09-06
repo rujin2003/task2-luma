@@ -1,0 +1,16 @@
+# Normalise line endings so the repo behaves identically on Windows, macOS and Linux.
+#
+# Without this, a Windows checkout with core.autocrlf=true writes CRLF into the working
+# tree while git stores LF. Prettier's --check then fails locally on every file and passes
+# in CI, which sends people reformatting files that were never wrong.
+* text=auto eol=lf
+
+# Binary: never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.db binary
+*.sqlite3 binary

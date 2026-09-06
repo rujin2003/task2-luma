@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from backend.agents.fake import FakeProvider
+from backend.agents.replay import ReplayProvider
 from backend.agents.routing import ModelRouting
 from backend.agents.runner import AgentRunner
 from backend.contracts import AgentRole, ApprovalRole, EventType, Money, Override
@@ -30,7 +30,7 @@ TS = datetime(2026, 3, 2, 9, 0, tzinfo=UTC)
 @pytest.fixture
 def cycle(bus: EventBus, toolset: FixtureToolset, routing: ModelRouting) -> WeeklyCycle:
     runner = AgentRunner(
-        provider=FakeProvider(),
+        provider=ReplayProvider(),
         toolset=toolset,
         routing=routing,
         bus=bus,

@@ -8,9 +8,9 @@ import httpx
 import pytest
 
 from backend.agents.factory import build_provider
-from backend.agents.fake import FakeProvider
 from backend.agents.gemini import GeminiProvider, gemini_schema
 from backend.agents.provider import LLMError, LLMRequest, Msg, SchemaViolation
+from backend.agents.replay import ReplayProvider
 from backend.contracts.agent import AgentFinding, AgentRole
 
 
@@ -41,9 +41,9 @@ def test_gemini_schema_inlines_refs_and_uses_gemini_types() -> None:
 
 
 def test_build_provider_honours_fake_mode(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("WARROOM_LLM", "fake")
+    monkeypatch.setenv("WARROOM_LLM", "replay")
     monkeypatch.setenv("GEMINI_API_KEY", "should-be-ignored")
-    assert isinstance(build_provider(), FakeProvider)
+    assert isinstance(build_provider(), ReplayProvider)
 
 
 def test_build_provider_requires_key_for_gemini(monkeypatch: pytest.MonkeyPatch) -> None:
