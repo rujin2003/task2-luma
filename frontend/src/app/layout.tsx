@@ -23,8 +23,13 @@ export const metadata: Metadata = {
 
 const SCREENS = [
   { key: "forecast", label: "Forecast", href: "/" },
-  { key: "war-room", label: "War Room", href: null },
-  { key: "recommendation", label: "Recommendation", href: null },
+  // The War Room is reachable because an escalation is open on the recorded golden path.
+  // When the session is quiet the screen renders "no war room is open" rather than being
+  // removed from the nav: an analyst who watched one ten minutes ago should be able to get
+  // back to what it concluded, not wonder whether they imagined it.
+  { key: "war-room", label: "War Room", href: "/war-room" },
+  { key: "recommendation", label: "Recommendation", href: "/recommendation" },
+  { key: "approvals", label: "Approvals", href: "/approvals" },
   { key: "evidence", label: "Evidence Explorer", href: "/evidence" },
 ];
 

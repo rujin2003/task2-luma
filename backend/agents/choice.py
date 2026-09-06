@@ -28,8 +28,13 @@ from backend.agents.context import Incident, assemble
 from backend.agents.provider import LLMError, LLMProvider, LLMRequest, Msg
 from backend.agents.routing import ModelRouting
 from backend.agents.runner import BudgetExceeded, assert_within_budget, fit_to_budget
-from backend.contracts.agent import AgentFinding, AgentRole
-from backend.contracts.events import AgentStarted, AgentToolCall, StatusMark
+from backend.contracts.agent import AgentFinding, AgentRole, AgentStatus
+from backend.contracts.events import (
+    AgentStarted,
+    AgentStatusChanged,
+    AgentToolCall,
+    StatusMark,
+)
 from backend.orchestrator.bus import EventBus
 from backend.tools.registry import ScopedToolset, tools_for
 
@@ -118,10 +123,31 @@ async def choose[ChoiceT: BaseModel](
         temperature=route.temperature,
     )
 
+    def settle(choice: Choice[ChoiceT]) -> Choice[ChoiceT]:
+        """Close the lane this call opened, on every path out of here.
+
+        Without this a chooser emits `agent.started` and never a terminal status, so the
+        War Room draws the Commander as still working on an investigation that closed
+        minutes ago. `degraded` rather than `failed` on the unhappy path is the accurate
+        word: the caller has a deterministic fallback and the investigation continues with
+        a real answer, it just did not get the model's opinion.
+        """
+        bus.emit(
+            AgentStatusChanged,
+            investigation_id=investigation_id,
+            mark=StatusMark.OK if choice.ok else StatusMark.WARN,
+            status_line=f"{role.value}: {'chose' if choice.ok else 'fell back'}",
+            agent=role,
+            run_id=run_id or role.value,
+            status=AgentStatus.COMPLETE if choice.ok else AgentStatus.DEGRADED,
+            failure_reason=choice.failure_reason or None,
+        )
+        return choice
+
     try:
         assert_within_budget(request, budget.system_prompt, budget.total_input)
     except BudgetExceeded as exc:
-        return Choice(None, failure_reason=str(exc))
+        return settle(Choice(None, failure_reason=str(exc)))
 
     try:
         value, usage = await provider.complete(request, schema, timeout_s=route.timeout_s)
@@ -129,6 +155,6 @@ async def choose[ChoiceT: BaseModel](
         # Includes the timeout. There is no retry here: the caller's fallback is a real
         # answer, and spending the tier's rate limit on a second attempt at a choice we
         # can make deterministically is the wrong trade.
-        return Choice(None, failure_reason=f"{type(exc).__name__}: {exc}")
+        return settle(Choice(None, failure_reason=f"{type(exc).__name__}: {exc}"))
 
-    return Choice(value, input_tokens=usage.input_tokens, output_tokens=usage.output_tokens)
+    return settle(Choice(value, input_tokens=usage.input_tokens, output_tokens=usage.output_tokens))
