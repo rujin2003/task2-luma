@@ -37,6 +37,42 @@
   },
   {
     "agent": "forecast",
+    "fingerprint": "97920ec3a40823fa",
+    "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
+    "output": {
+      "agent": "forecast",
+      "status": "complete",
+      "headline": "Two of four drivers carry the forecast; the Dodo recovery rate is stale",
+      "detail": "Closing cash breaches the $20.0M floor in W5 through W7, with the trough at W6. The Dodo soft-decline recovery rate behind subscription receipts was last refreshed 19 days ago and is the least trustworthy input to those weeks.",
+      "confidence": {
+        "basis": "qualitative",
+        "band": "medium",
+        "rationale": "Three of four drivers refreshed inside a week; one is 19 days old"
+      },
+      "evidence": [
+        {
+          "reference": "dodo:decline-2026-W10#soft_rate",
+          "source": "dodo",
+          "excerpt": "soft-decline recovery rate, 19 days old"
+        },
+        {
+          "reference": "forecast:fv-2026-W10",
+          "source": "forecast",
+          "excerpt": "forecast version fv-2026-W10, draft"
+        }
+      ],
+      "risks": [
+        "A recovery rate 10pp below the stale assumption moves the W6 trough further down"
+      ],
+      "recommended_actions": []
+    },
+    "usage": {
+      "input_tokens": 693,
+      "output_tokens": 220
+    }
+  },
+  {
+    "agent": "forecast",
     "default": true,
     "note": "Default replay for calls without a recorded fingerprint.",
     "output": {

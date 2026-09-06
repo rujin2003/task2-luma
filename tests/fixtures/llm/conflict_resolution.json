@@ -1,0 +1,15 @@
+[
+  {
+    "agent": "conflict_resolution",
+    "default": true,
+    "note": "Rules on the AP-versus-Supplier-Risk contradiction over BILL-8841.",
+    "output": {
+      "upheld": "supplier_risk",
+      "resolution": "Supplier Risk stands on BILL-8841. Acme is sole source at 31% of category spend with an open dispute, and the profile supports no stretch at all, not a shorter one. The $22.0K discount is cheaper than an allocation the horizon cannot recover.",
+      "evidence_refs": [
+        "ap_ledger:supplier-acme#risk",
+        "ap_ledger:BILL-8841#due_date"
+      ]
+    }
+  }
+]

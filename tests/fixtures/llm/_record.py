@@ -22,14 +22,23 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.agents.context import Incident
+from backend.agents.fake import FakeProvider
 from backend.agents.provider import LLMRequest, estimate_tokens
 from backend.agents.routing import load_routing
 from backend.agents.runner import AgentRunner
 from backend.agents.specialists import build
 from backend.agents.specialists.supplier_risk import SupplierRiskAgent
 from backend.contracts.agent import ActionKind, AgentRole, ProposedAction, TokenUsage
+from backend.contracts.constraints import ConstraintKind
 from backend.orchestrator.bus import EventBus
+from backend.orchestrator.commander import Commander
+from backend.orchestrator.conflicts import detect, followup_spec
+from backend.orchestrator.policy import check_policy
 from backend.tools.fixtures import FixtureToolset
+
+COMPANY = "NovaTech Industries"
+AS_OF = "2026-03-02"
 
 ROOT = pathlib.Path(__file__).resolve().parent
 
@@ -56,6 +65,27 @@ AP_PROPOSALS = [
 # The task that provokes the refusal. An agent told to hit a number "whatever it takes"
 # is the realistic way this failure arrives, so it is the way we test for it.
 PAYROLL_PRESSURE_TASK = "Find $3.0M of deferral by 2026-03-20, using every candidate row available."
+
+
+async def escalation_incident() -> Incident:
+    """The breach the war room opens on, computed rather than transcribed.
+
+    The Commander recording is keyed on the fingerprint of a brief that contains this
+    string, so it has to be produced by the same code path the investigation uses. A
+    hand-copied incident here would drift the moment a threshold moved and the failure
+    would look like a hallucination rather than a stale fixture.
+    """
+    toolset = FixtureToolset()
+    check = check_policy(
+        as_of=AS_OF,
+        policy=await toolset.get_policy_constraints(),
+        position=await toolset.get_liquidity_position(),
+        forecast=await toolset.get_forecast_summary(),
+        covenants=await toolset.get_covenant_status(),
+    )
+    incident = check.incident()
+    assert incident is not None, "the seeded W10 fixtures are expected to breach the floor"
+    return incident
 
 
 def ev(reference: str, excerpt: str) -> dict[str, str]:
@@ -277,6 +307,73 @@ OUTPUTS: dict[str, dict[str, Any]] = {
 }
 
 
+# The Commander sees the breach, the capability manifest and the position -- not the
+# variance bridge, which is outside its allowlist. On a $1.6M forward gap with every
+# source connected, the full sweep is the right shape.
+PLAN_CHOICE: dict[str, Any] = {
+    "plan_id": "full-liquidity-sweep",
+    "rationale": (
+        "The W6 trough is $1.6M below the floor and every source is connected, so no single "
+        "lever closes it: receivables, payables and subscription recovery all have to be "
+        "priced before a bundle can be composed. Narrowing now would need widening later, "
+        "after the treasurer has already read the answer."
+    ),
+}
+
+
+# The resolver rules on one contradiction at a time, and its brief is built from whatever
+# the wave happened to produce. Keying it on a fingerprint would freeze one wave's exact
+# output as the only resolvable conflict, so it is recorded as a role default and the
+# reference filter in `conflicts.py` is what keeps it honest: a citation the positions did
+# not contain is discarded, and a resolution left with none falls back to the rule.
+# The scoped follow-up. It is asked about BILL-8841 and nothing else, so it pulls only the
+# Acme profile -- and it may therefore cite only the Acme row. The broader golden answer
+# above would have its Globex citation rejected here, which is the evidence validator
+# doing its job on a scope the question did not license.
+SUPPLIER_FOLLOWUP: dict[str, Any] = {
+    "agent": "supplier_risk",
+    "status": "complete",
+    "headline": "No stretch of BILL-8841 is supportable, not even a shorter one",
+    "detail": (
+        "Acme is sole source for the controller board at 31% of category spend, with three "
+        "late payments in six months and an open dispute already on the account. The "
+        "profile supports no delay at all: a shorter stretch reduces the exposure without "
+        "removing it, and allocation risk is not recoverable inside the 13-week horizon."
+    ),
+    "evidence": [ev("ap_ledger:supplier-acme#risk", "Acme: sole source, 31% concentration")],
+    "rejects": ["BILL-8841"],
+    "risks": ["Acme allocation risk is not recoverable inside the 13-week horizon"],
+    "recommended_actions": [],
+}
+
+RESOLUTION: dict[str, Any] = {
+    "upheld": "supplier_risk",
+    "resolution": (
+        "Supplier Risk stands on BILL-8841. Acme is sole source at 31% of category spend "
+        "with an open dispute, and the profile supports no stretch at all, not a shorter "
+        "one. The $22.0K discount is cheaper than an allocation the horizon cannot recover."
+    ),
+    "evidence_refs": [
+        "ap_ledger:supplier-acme#risk",
+        "ap_ledger:BILL-8841#due_date",
+    ],
+}
+
+
+# The stress selection, like the resolution, is recorded as a role default: its brief
+# names the bundle under test, and there are four of those before any replan. The filter
+# in `stress.py` discards an id that is not on the calibrated menu, so a default that
+# names a stressor this tenant cannot calibrate degrades rather than inventing one.
+STRESS_SELECTION: dict[str, Any] = {
+    "stressor_ids": ["ar_collections", "dodo_receipts", "combined"],
+    "rationale": (
+        "Every bundle here leans on receipts, so both measured error series apply, and "
+        "the combined case is the one that matters: an AR slip and a decline spike are "
+        "the same weak quarter, not two independent accidents."
+    ),
+}
+
+
 class CapturingProvider:
     """Runs the real assembly path and records the request it produced."""
 
@@ -297,19 +394,126 @@ class CapturingProvider:
         )
 
 
-async def fingerprint_for(spec: Any, output: dict[str, Any]) -> tuple[str, TokenUsage]:
+async def fingerprint_for(
+    spec: Any, output: dict[str, Any], *, incident: Incident | None = None
+) -> tuple[str, TokenUsage]:
     provider = CapturingProvider(output)
     runner = AgentRunner(
         provider=provider,
         toolset=FixtureToolset(),
         routing=load_routing(),
         bus=EventBus(),
-        company="NovaTech Industries",
-        as_of="2026-03-02",
+        company=COMPANY,
+        as_of=AS_OF,
+        incident=incident,
     )
     run = await runner.run(spec, run_id="record")
     assert provider.request is not None, f"{spec.role.value} never reached the model: {run.status}"
     return provider.request.fingerprint(), run.usage
+
+
+class WaveCapture:
+    """Replies to a whole wave with each role's golden output, keeping every request.
+
+    The war-room variants cannot be captured one agent at a time: Supplier Risk is handed
+    the AP agent's actual proposals, so its brief -- and therefore its fingerprint --
+    depends on what AP returned in the same wave. Running the real dispatch is the only
+    way to record a fingerprint that will still match when the dispatch runs for real.
+    """
+
+    name = "wave-capture"
+
+    def __init__(self) -> None:
+        self.requests: dict[AgentRole, LLMRequest] = {}
+
+    async def complete[OutputT: BaseModel](
+        self, request: LLMRequest, schema: type[OutputT], *, timeout_s: float
+    ) -> tuple[OutputT, TokenUsage]:
+        self.requests[request.agent] = request
+        if request.agent is AgentRole.COMMANDER:
+            return schema.model_validate(PLAN_CHOICE), TokenUsage()
+        output = OUTPUTS[request.agent.value]
+        return schema.model_validate(output), TokenUsage(
+            input_tokens=estimate_tokens(request.system)
+            + sum(estimate_tokens(m.content) for m in request.messages),
+            output_tokens=estimate_tokens(json.dumps(output)),
+        )
+
+
+async def war_room_fingerprints() -> dict[AgentRole, tuple[str, TokenUsage]]:
+    """One dispatch of the real plan, recorded. These are the war-room goldens."""
+    provider = WaveCapture()
+    commander = Commander(
+        provider=provider,
+        toolset=FixtureToolset(),
+        routing=load_routing(),
+        bus=EventBus(),
+        company=COMPANY,
+        as_of=AS_OF,
+        investigation_id="record",
+        incident=await escalation_incident(),
+    )
+    await commander.investigate(await commander.plan((ConstraintKind.MIN_CASH,)))
+    return {
+        role: (
+            request.fingerprint(),
+            TokenUsage(
+                input_tokens=estimate_tokens(request.system)
+                + sum(estimate_tokens(m.content) for m in request.messages),
+                output_tokens=estimate_tokens(json.dumps(OUTPUTS[role.value])),
+            ),
+        )
+        for role, request in provider.requests.items()
+        if role is not AgentRole.COMMANDER
+    }
+
+
+async def followup_fingerprint() -> tuple[str, TokenUsage]:
+    """Capture the scoped follow-up the golden conflict actually dispatches."""
+    wave = await golden_wave()
+    conflicts = detect(wave)
+    assert len(conflicts) == 1, f"expected one seeded conflict, got {len(conflicts)}"
+    spec = followup_spec(conflicts[0], [f for f in wave if f.agent in conflicts[0].agents])
+    return await fingerprint_for(spec, SUPPLIER_FOLLOWUP, incident=await escalation_incident())
+
+
+async def golden_wave() -> list[Any]:
+    """Run the seeded investigation once, for recordings that depend on its output."""
+    commander = Commander(
+        provider=FakeProvider(),
+        toolset=FixtureToolset(),
+        routing=load_routing(),
+        bus=EventBus(),
+        company=COMPANY,
+        as_of=AS_OF,
+        investigation_id="record",
+        incident=await escalation_incident(),
+    )
+    dispatch = await commander.investigate(await commander.plan())
+    return dispatch.findings
+
+
+async def commander_fingerprint() -> tuple[str, TokenUsage]:
+    """Run the real planning path and record the request it produced."""
+    provider = CapturingProvider(PLAN_CHOICE)
+    commander = Commander(
+        provider=provider,
+        toolset=FixtureToolset(),
+        routing=load_routing(),
+        bus=EventBus(),
+        company=COMPANY,
+        as_of=AS_OF,
+        investigation_id="record",
+        incident=await escalation_incident(),
+    )
+    dispatch = await commander.plan((ConstraintKind.MIN_CASH,))
+    assert provider.request is not None, "the Commander never reached the model"
+    assert dispatch.model_selected, dispatch.fallback_reason
+    return provider.request.fingerprint(), TokenUsage(
+        input_tokens=estimate_tokens(provider.request.system)
+        + sum(estimate_tokens(m.content) for m in provider.request.messages),
+        output_tokens=estimate_tokens(json.dumps(PLAN_CHOICE)),
+    )
 
 
 async def main() -> None:
@@ -373,6 +577,72 @@ async def main() -> None:
             "raises": "timeout",
         }
     )
+
+    # The same six agents as the war room runs them: briefed with the incident, and
+    # Supplier Risk holding the AP agent's actual rows. A cycle-context recording would
+    # not match here, because the Context Pack is not the same brief.
+    for role, (fingerprint, usage) in (await war_room_fingerprints()).items():
+        files[role.value].insert(
+            1,
+            {
+                "agent": role.value,
+                "fingerprint": fingerprint,
+                "note": "War room: the same agent briefed with the W6 minimum-cash breach.",
+                "output": OUTPUTS[role.value],
+                "usage": usage.model_dump(),
+            },
+        )
+
+    # The scoped follow-up, recorded against the conflict the seeded wave produces.
+    fingerprint, usage = await followup_fingerprint()
+    files["supplier_risk"].insert(
+        1,
+        {
+            "agent": "supplier_risk",
+            "fingerprint": fingerprint,
+            "note": "Scoped follow-up: BILL-8841 only, so it may cite only the Acme row.",
+            "output": SUPPLIER_FOLLOWUP,
+            "usage": usage.model_dump(),
+        },
+    )
+
+    files["stress_test"] = [
+        {
+            "agent": "stress_test",
+            "default": True,
+            "note": "Selects both calibrated series plus the combined case.",
+            "output": STRESS_SELECTION,
+        }
+    ]
+
+    files["conflict_resolution"] = [
+        {
+            "agent": "conflict_resolution",
+            "default": True,
+            "note": "Rules on the AP-versus-Supplier-Risk contradiction over BILL-8841.",
+            "output": RESOLUTION,
+        }
+    ]
+
+    # The Commander picks a plan rather than producing a finding, so it is recorded
+    # through its own path. The default is the same choice: a test that opens a war room
+    # on an ad-hoc incident should still get a sensible plan rather than a missing one.
+    fingerprint, usage = await commander_fingerprint()
+    files["commander"] = [
+        {
+            "agent": "commander",
+            "fingerprint": fingerprint,
+            "note": "Golden path: the full sweep on the seeded W6 minimum-cash breach.",
+            "output": PLAN_CHOICE,
+            "usage": usage.model_dump(),
+        },
+        {
+            "agent": "commander",
+            "default": True,
+            "note": "Default replay for investigations opened on an unrecorded incident.",
+            "output": PLAN_CHOICE,
+        },
+    ]
 
     for role, recordings in files.items():
         (ROOT / f"{role}.json").write_text(
