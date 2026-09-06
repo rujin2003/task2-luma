@@ -360,6 +360,20 @@ RESOLUTION: dict[str, Any] = {
 }
 
 
+# The stress selection, like the resolution, is recorded as a role default: its brief
+# names the bundle under test, and there are four of those before any replan. The filter
+# in `stress.py` discards an id that is not on the calibrated menu, so a default that
+# names a stressor this tenant cannot calibrate degrades rather than inventing one.
+STRESS_SELECTION: dict[str, Any] = {
+    "stressor_ids": ["ar_collections", "dodo_receipts", "combined"],
+    "rationale": (
+        "Every bundle here leans on receipts, so both measured error series apply, and "
+        "the combined case is the one that matters: an AR slip and a decline spike are "
+        "the same weak quarter, not two independent accidents."
+    ),
+}
+
+
 class CapturingProvider:
     """Runs the real assembly path and records the request it produced."""
 
@@ -591,6 +605,15 @@ async def main() -> None:
             "usage": usage.model_dump(),
         },
     )
+
+    files["stress_test"] = [
+        {
+            "agent": "stress_test",
+            "default": True,
+            "note": "Selects both calibrated series plus the combined case.",
+            "output": STRESS_SELECTION,
+        }
+    ]
 
     files["conflict_resolution"] = [
         {
