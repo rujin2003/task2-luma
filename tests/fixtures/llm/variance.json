@@ -1,14 +1,17 @@
 [
   {
     "agent": "variance",
-    "default": true,
-    "note": "Golden path: the seeded W09 receipts miss, root-caused to invoice 10482.",
+    "fingerprint": "31a866de32a7dd6c",
+    "note": "Golden path: variance against the seeded W10 fixtures.",
     "output": {
       "agent": "variance",
       "status": "complete",
       "headline": "Receipts $1.9M below plan, $1.4M of it one delayed enterprise invoice",
-      "detail": "Contoso invoice 10482 slipped past terms after a disputed delivery note. The AP overspend is a deliberate early payment run that captured a 2/10 discount.",
-      "quantum": { "minor_units": -190000000, "currency": "USD" },
+      "detail": "Contoso invoice 10482 slipped past terms after a disputed delivery note, and that single row is three quarters of the miss. The AP overspend is a decision, not a failure: the W09 run went early to capture a 2/10 discount. The Dodo shortfall is the stale recovery-rate assumption, and it repeats until refreshed.",
+      "quantum": {
+        "minor_units": -187000000,
+        "currency": "USD"
+      },
       "confidence": {
         "basis": "empirical",
         "rationale": "26-week roll-forward at the W1 horizon",
@@ -20,21 +23,72 @@
         {
           "reference": "ar_ledger:INV-10482#amount_due",
           "source": "ar_ledger",
-          "excerpt": "Contoso Ltd, invoice 10482, $1.2M, due 2026-01-20, 41 days past terms"
+          "excerpt": "Contoso invoice 10482, 41 days past terms"
         },
         {
           "reference": "ap_ledger:run-2026-W09",
           "source": "ap_ledger",
-          "excerpt": "Payment run 2026-W09 executed two days early to capture a 2/10 discount worth $58K"
+          "excerpt": "W09 payment run executed early for a discount"
+        },
+        {
+          "reference": "dodo:decline-2026-W10#soft_rate",
+          "source": "dodo",
+          "excerpt": "soft declines up 3.1pp week on week"
         }
       ],
       "risks": [
-        "If the Contoso dispute is not resolved this week the miss repeats in W2"
+        "The Contoso dispute repeats the miss next week if it is not resolved",
+        "The Dodo driver is stale, so its delta is likely to recur"
       ],
-      "recommended_actions": [],
-      "rejects": [],
-      "requires_followup": false
+      "recommended_actions": []
     },
-    "usage": { "input_tokens": 1840, "output_tokens": 312 }
+    "usage": {
+      "input_tokens": 652,
+      "output_tokens": 305
+    }
+  },
+  {
+    "agent": "variance",
+    "default": true,
+    "note": "Default replay for calls without a recorded fingerprint.",
+    "output": {
+      "agent": "variance",
+      "status": "complete",
+      "headline": "Receipts $1.9M below plan, $1.4M of it one delayed enterprise invoice",
+      "detail": "Contoso invoice 10482 slipped past terms after a disputed delivery note, and that single row is three quarters of the miss. The AP overspend is a decision, not a failure: the W09 run went early to capture a 2/10 discount. The Dodo shortfall is the stale recovery-rate assumption, and it repeats until refreshed.",
+      "quantum": {
+        "minor_units": -187000000,
+        "currency": "USD"
+      },
+      "confidence": {
+        "basis": "empirical",
+        "rationale": "26-week roll-forward at the W1 horizon",
+        "mape_pct": "2.1",
+        "sample_size": 26,
+        "horizon_weeks": 1
+      },
+      "evidence": [
+        {
+          "reference": "ar_ledger:INV-10482#amount_due",
+          "source": "ar_ledger",
+          "excerpt": "Contoso invoice 10482, 41 days past terms"
+        },
+        {
+          "reference": "ap_ledger:run-2026-W09",
+          "source": "ap_ledger",
+          "excerpt": "W09 payment run executed early for a discount"
+        },
+        {
+          "reference": "dodo:decline-2026-W10#soft_rate",
+          "source": "dodo",
+          "excerpt": "soft declines up 3.1pp week on week"
+        }
+      ],
+      "risks": [
+        "The Contoso dispute repeats the miss next week if it is not resolved",
+        "The Dodo driver is stale, so its delta is likely to recur"
+      ],
+      "recommended_actions": []
+    }
   }
 ]

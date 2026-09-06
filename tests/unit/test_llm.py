@@ -148,10 +148,11 @@ async def test_strict_mode_refuses_to_improvise(tmp_path: Path) -> None:
 
 
 async def test_an_unrecorded_role_is_missing_not_empty() -> None:
+    """The Cartographer has no recordings yet, and asking for one must say so."""
     provider = FakeProvider()
     with pytest.raises(RecordingMissing):
         await provider.complete(
-            _request(AgentRole.SUPPLIER_RISK), AgentFinding, timeout_s=30
+            _request(AgentRole.CARTOGRAPHER), AgentFinding, timeout_s=30
         )
 
 

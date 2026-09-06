@@ -1,4 +1,4 @@
-"""One agent, one run: gather -> brief -> call -> validate -> record.
+"""One agent, one run: gather -> brief -> call -> review -> validate -> record.
 
 Everything an agent shares with every other agent lives here, so a specialist is a prompt,
 a tool allowlist and a `gather()` -- nothing else. That is what keeps six agents from
@@ -10,9 +10,10 @@ The order below is the whole contract, and each step is load-bearing:
 2. **Brief.** A Context Pack is assembled by code and trimmed to budget.
 3. **Budget gate.** An over-budget call fails loudly here, before it is paid for.
 4. **Call.** Structured output only, under a per-agent timeout.
-5. **Validate.** Every citation must resolve to a row the tools actually returned, or the
+5. **Review.** A deterministic policy gate on the answer, before it is validated.
+6. **Validate.** Every citation must resolve to a row the tools actually returned, or the
    finding is rejected rather than surfaced -- the run degrades, it does not lie.
-6. **Record.** An `AgentRun` is produced for every outcome, including the failures.
+7. **Record.** An `AgentRun` is produced for every outcome, including the failures.
 
 The runner never raises for an agent-level failure. A wave of nine agents where one fails
 is a degraded wave, not a crashed one. The single exception is `LLMTimeout`, which
@@ -74,6 +75,15 @@ class AgentSpec(Protocol):
 
     async def gather(self, tools: ScopedToolset) -> list[str]:
         """Call the allowlisted tools and render their results as brief lines."""
+        ...
+
+    def review(self, finding: AgentFinding) -> AgentFinding:
+        """Deterministic post-check on the model's answer, before it is validated.
+
+        Where policy has the last word it takes it here -- the AP agent that proposes
+        deferring payroll has that proposal removed by code, not argued out of it by a
+        prompt. Returning the finding unchanged is the normal case.
+        """
         ...
 
 
@@ -214,7 +224,19 @@ class AgentRunner:
                 context_pack=prompt,
             )
 
-        # 5. Validate. A citation the ledger cannot confirm never reaches a screen.
+        # 5. Review. Policy has the last word, and it takes it before validation so that
+        # any evidence a refusal adds goes through the same three gates as the model's.
+        try:
+            finding = spec.review(finding)
+        except Exception as exc:  # noqa: BLE001 -- a gate that raises must not look like a finding
+            return record(
+                AgentStatus.FAILED,
+                failure_reason=f"review gate: {type(exc).__name__}: {exc}",
+                usage=usage,
+                context_pack=prompt,
+            )
+
+        # 6. Validate. A citation the ledger cannot confirm never reaches a screen.
         verdict = await EvidenceValidator(self._toolset, scoped.references).validate(finding)
         for rejection in verdict.rejections:
             self._bus.emit(
@@ -245,7 +267,7 @@ class AgentRunner:
             finding=verified,
         )
 
-        # 6. Record. A refusal is an outcome, not an error: the AP agent asked to defer
+        # 7. Record. A refusal is an outcome, not an error: the AP agent asked to defer
         # payroll returns a constraint violation, and that run is complete-and-refused.
         status = verified.status if verified.status in AGENT_DECIDED else AgentStatus.COMPLETE
         reason = verified.detail[:400] if status is not AgentStatus.COMPLETE else None

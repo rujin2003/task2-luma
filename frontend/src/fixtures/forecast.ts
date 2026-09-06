@@ -83,11 +83,13 @@ const ROWS: ForecastRow[] = [
       320_000, 180_000, 210_000, 160_000, 190_000, 150_000, 220_000, 240_000, 200_000, 180_000,
       210_000, 230_000, 220_000,
     ],
+    { reference: "gl:other-receipts-2026-W10" },
   ),
   row(
     "Payroll",
     "outflow",
     [2_400_000, 0, 2_400_000, 0, 2_450_000, 0, 2_450_000, 0, 2_450_000, 0, 2_500_000, 0, 2_500_000],
+    { reference: "payroll:schedule-2026-Q1" },
   ),
   row(
     "AP — vendor payments",
@@ -98,8 +100,12 @@ const ROWS: ForecastRow[] = [
     ],
     { reference: "ap_ledger:run-2026-W10" },
   ),
-  row("Tax and statutory", "outflow", [0, 0, 0, 850_000, 0, 0, 0, 900_000, 0, 0, 0, 940_000, 0]),
-  row("Debt service", "outflow", [0, 640_000, 0, 0, 640_000, 0, 0, 640_000, 0, 0, 640_000, 0, 0]),
+  row("Tax and statutory", "outflow", [0, 0, 0, 850_000, 0, 0, 0, 900_000, 0, 0, 0, 940_000, 0], {
+    reference: "tax_calendar:2026-Q1",
+  }),
+  row("Debt service", "outflow", [0, 640_000, 0, 0, 640_000, 0, 0, 640_000, 0, 0, 640_000, 0, 0], {
+    reference: "debt:schedule-2026",
+  }),
   row(
     "Operating expenses",
     "outflow",
@@ -107,6 +113,7 @@ const ROWS: ForecastRow[] = [
       1_420_000, 1_390_000, 1_410_000, 1_450_000, 1_440_000, 1_430_000, 1_470_000, 1_460_000,
       1_450_000, 1_480_000, 1_470_000, 1_490_000, 1_480_000,
     ],
+    { reference: "gl:opex-runrate-2026-W09" },
   ),
 ];
 
@@ -127,6 +134,7 @@ const WEEKS: ForecastWeek[] = WEEK_ENDINGS.map((week_ending, index) => {
     closing_cash: { minor_units: closing, currency: "USD" },
     basis: basisFor(index),
     breaches_floor: closing < usd(FLOOR_MAJOR).minor_units,
+    reference: "forecast:fv-2026-W10",
   };
 });
 
@@ -140,9 +148,12 @@ export const forecastFixture: ForecastSnapshot = {
 
   liquidity: {
     cash_today: usd(24_800_000),
+    cash_today_reference: "bank:balance-2026-03-02",
     forecast_min_cash: usd(18_400_000),
     forecast_min_week: 6,
+    min_cash_reference: "forecast:fv-2026-W10",
     floor: usd(FLOOR_MAJOR),
+    floor_reference: "policy:treasury-policy-v4#min_cash",
     runway_weeks: 19,
     revolver_available: usd(8_000_000),
     revolver_utilization_pct: "42.0",
@@ -181,6 +192,16 @@ export const forecastFixture: ForecastSnapshot = {
       explanation: "Payment run executed two days early to capture a 2/10 discount worth $58K.",
       explained_by: "variance",
       evidence_reference: "ap_ledger:run-2026-W09",
+    },
+    {
+      // Degraded, and shown as such. The delta is real; the explanation is missing, and
+      // the screen says which of the two is true rather than leaving a blank line.
+      category: "Other receipts",
+      plan: usd(1_100_000),
+      actual: usd(1_070_000),
+      delta: usd(-30_000),
+      explanation: "",
+      unexplained_reason: "Variance agent timed out on this row; it was not re-run.",
     },
   ],
 

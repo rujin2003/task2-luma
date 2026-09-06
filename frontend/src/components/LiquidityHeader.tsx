@@ -1,6 +1,7 @@
 import { formatMoney } from "@/lib/contracts";
 import type { LiquiditySummary } from "@/lib/forecast";
 
+import { Traced } from "./evidence/Traced";
 import { StatusTag } from "./primitives";
 
 /**
@@ -11,21 +12,25 @@ function Tile({
   label,
   value,
   note,
+  reference,
   emphasis = false,
 }: {
   label: string;
   value: string;
   note?: React.ReactNode;
+  reference?: string;
   emphasis?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1 border-l border-line px-4 first:border-l-0 first:pl-0">
       <span className="text-xs tracking-wide text-ink-3 uppercase">{label}</span>
-      <span
+      <Traced
+        reference={reference}
+        label={label}
         className={`font-mono tabular-nums ${emphasis ? "text-2xl text-ink" : "text-xl text-ink"}`}
       >
         {value}
-      </span>
+      </Traced>
       {note ? <span className="text-xs text-ink-3">{note}</span> : null}
     </div>
   );
@@ -43,12 +48,14 @@ export function LiquidityHeader({ liquidity }: { liquidity: LiquiditySummary }) 
       <Tile
         label="Cash today"
         value={formatMoney(liquidity.cash_today, { compact: true })}
+        reference={liquidity.cash_today_reference}
         note="Bank, reconciled"
         emphasis
       />
       <Tile
         label={`Forecast minimum (W${liquidity.forecast_min_week})`}
         value={formatMoney(liquidity.forecast_min_cash, { compact: true })}
+        reference={liquidity.min_cash_reference}
         note={
           breached ? (
             <StatusTag
@@ -64,6 +71,7 @@ export function LiquidityHeader({ liquidity }: { liquidity: LiquiditySummary }) 
       <Tile
         label="Policy floor"
         value={formatMoney(liquidity.floor, { compact: true })}
+        reference={liquidity.floor_reference}
         note="TreasuryPolicy v4, hard constraint"
       />
       <Tile

@@ -1,0 +1,66 @@
+[
+  {
+    "agent": "supplier_risk",
+    "fingerprint": "31bc896646ed8537",
+    "note": "Golden path: supplier_risk against the seeded W10 fixtures.",
+    "output": {
+      "agent": "supplier_risk",
+      "status": "complete",
+      "headline": "Reject the Acme deferral; the Globex deferral is sound",
+      "detail": "Acme is sole source for the controller board at 31% of category spend, with three late payments already in six months and an open dispute. A 21-day stretch there risks allocation, which costs more than the float it raises. Globex has two qualified alternates, a clean payment record and 45-day terms.",
+      "evidence": [
+        {
+          "reference": "ap_ledger:supplier-acme#risk",
+          "source": "ap_ledger",
+          "excerpt": "Acme: sole source, 31% concentration"
+        },
+        {
+          "reference": "ap_ledger:supplier-globex#risk",
+          "source": "ap_ledger",
+          "excerpt": "Globex: two alternates, no late payments"
+        }
+      ],
+      "rejects": [
+        "BILL-8841"
+      ],
+      "risks": [
+        "Acme allocation risk is not recoverable inside the 13-week horizon"
+      ],
+      "recommended_actions": []
+    },
+    "usage": {
+      "input_tokens": 595,
+      "output_tokens": 207
+    }
+  },
+  {
+    "agent": "supplier_risk",
+    "default": true,
+    "note": "Default replay for calls without a recorded fingerprint.",
+    "output": {
+      "agent": "supplier_risk",
+      "status": "complete",
+      "headline": "Reject the Acme deferral; the Globex deferral is sound",
+      "detail": "Acme is sole source for the controller board at 31% of category spend, with three late payments already in six months and an open dispute. A 21-day stretch there risks allocation, which costs more than the float it raises. Globex has two qualified alternates, a clean payment record and 45-day terms.",
+      "evidence": [
+        {
+          "reference": "ap_ledger:supplier-acme#risk",
+          "source": "ap_ledger",
+          "excerpt": "Acme: sole source, 31% concentration"
+        },
+        {
+          "reference": "ap_ledger:supplier-globex#risk",
+          "source": "ap_ledger",
+          "excerpt": "Globex: two alternates, no late payments"
+        }
+      ],
+      "rejects": [
+        "BILL-8841"
+      ],
+      "risks": [
+        "Acme allocation risk is not recoverable inside the 13-week horizon"
+      ],
+      "recommended_actions": []
+    }
+  }
+]

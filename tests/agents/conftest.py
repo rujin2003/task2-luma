@@ -11,7 +11,7 @@ import pytest
 
 from backend.agents.fake import FakeProvider
 from backend.agents.routing import ModelRouting, load_routing
-from backend.contracts import AgentRole, AgentStatus
+from backend.contracts import AgentFinding, AgentRole, AgentStatus
 from backend.orchestrator.bus import EventBus
 from backend.tools.fixtures import FixtureToolset
 from backend.tools.registry import ScopedToolset
@@ -44,6 +44,9 @@ class StubSpec:
     task: str = "Rank this week's realistic collection acceleration."
     tools: list[str] = field(default_factory=lambda: ["rank_collection_opportunities"])
     lines: list[str] | None = None
+
+    def review(self, finding: AgentFinding) -> AgentFinding:
+        return finding
 
     async def gather(self, tools: ScopedToolset) -> list[str]:
         lines: list[str] = []
