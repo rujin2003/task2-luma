@@ -1,0 +1,20 @@
+{
+  "as_of": "2026-03-02",
+  "available_sources": [
+    "bank",
+    "gl",
+    "ar_ledger",
+    "ap_ledger",
+    "payroll",
+    "tax_calendar",
+    "debt",
+    "dodo",
+    "forecast",
+    "policy"
+  ],
+  "missing_sources": [],
+  "notes": {
+    "dodo": "Subscription volume is live; soft/hard decline taxonomy available."
+  },
+  "references": []
+}

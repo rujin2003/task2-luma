@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/**
+ * WAR ROOM console theme. Dark is the selected mode, not an inverted light theme:
+ * every step below is chosen against the #1a1a19 surface.
+ *
+ * Status colours are reserved -- good / warning / serious / critical -- and always ship
+ * with a glyph and a label, so no meaning is ever carried by colour alone.
+ */
+@theme {
+  --color-surface-0: #131312;
+  --color-surface-1: #1a1a19;
+  --color-surface-2: #232322;
+  --color-line: #383835;
+
+  --color-ink: #ffffff;
+  --color-ink-2: #c3c2b7;
+  --color-ink-3: #8b8a82;
+
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+  --color-accent: #3987e5;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-surface-0);
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/**
+ * The visual grammar. An actual is solid ink; an estimate is dashed; an assumption is
+ * dotted; a recommendation is marked. The rule under each number carries the meaning
+ * even in greyscale, so colour is never doing the work alone.
+ */
+.basis-actual {
+  color: var(--color-ink);
+}
+
+.basis-estimate {
+  color: var(--color-ink-2);
+  border-bottom: 1px dashed var(--color-ink-3);
+}
+
+.basis-assumption {
+  color: var(--color-ink-2);
+  border-bottom: 1px dotted var(--color-warning);
+}
+
+.basis-recommendation {
+  color: var(--color-good);
+  border-bottom: 1px solid var(--color-good);
+}

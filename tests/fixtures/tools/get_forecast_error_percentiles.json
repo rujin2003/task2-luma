@@ -1,0 +1,43 @@
+{
+  "as_of": "2026-03-02",
+  "percentiles": [
+    {
+      "horizon_weeks": 1,
+      "category": "ar_collections",
+      "p50_pct": "2.1",
+      "p90_pct": "6.4",
+      "sample_size": 26
+    },
+    {
+      "horizon_weeks": 4,
+      "category": "ar_collections",
+      "p50_pct": "5.8",
+      "p90_pct": "12.9",
+      "sample_size": 26
+    },
+    {
+      "horizon_weeks": 6,
+      "category": "ar_collections",
+      "p50_pct": "8.4",
+      "p90_pct": "17.3",
+      "sample_size": 26
+    },
+    {
+      "horizon_weeks": 6,
+      "category": "dodo_receipts",
+      "p50_pct": "4.2",
+      "p90_pct": "9.8",
+      "sample_size": 26
+    },
+    {
+      "horizon_weeks": 13,
+      "category": "ar_collections",
+      "p50_pct": "14.2",
+      "p90_pct": "26.1",
+      "sample_size": 26
+    }
+  ],
+  "references": [
+    "forecast:accuracy-2026-W10"
+  ]
+}

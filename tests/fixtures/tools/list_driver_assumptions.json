@@ -1,0 +1,42 @@
+{
+  "as_of": "2026-03-02",
+  "rows": [
+    {
+      "category": "Dodo subscription receipts",
+      "driver": "soft-decline recovery rate",
+      "value_display": "61% within 14 days",
+      "last_refreshed": "2026-02-11",
+      "days_since_refresh": 19,
+      "stale": true,
+      "reference": "dodo:decline-2026-W10#soft_rate"
+    },
+    {
+      "category": "AR collections - enterprise",
+      "driver": "30-day collection curve",
+      "value_display": "72% of open AR inside terms",
+      "last_refreshed": "2026-02-27",
+      "days_since_refresh": 3,
+      "stale": false,
+      "reference": "ar_ledger:curve-2026-W09"
+    },
+    {
+      "category": "Operating expenses",
+      "driver": "run-rate from trailing 8 weeks",
+      "value_display": "$1.45M per week",
+      "last_refreshed": "2026-03-01",
+      "days_since_refresh": 1,
+      "stale": false,
+      "reference": "gl:opex-runrate-2026-W09"
+    },
+    {
+      "category": "AP - vendor payments",
+      "driver": "payment-run cadence",
+      "value_display": "weekly, Thursday",
+      "last_refreshed": "2026-02-24",
+      "days_since_refresh": 6,
+      "stale": false,
+      "reference": "ap_ledger:cadence-2026-W08"
+    }
+  ],
+  "references": []
+}

@@ -1,0 +1,44 @@
+{
+  "as_of": "2026-03-02",
+  "total": {
+    "minor_units": 842000000,
+    "currency": "USD"
+  },
+  "buckets": [
+    {
+      "label": "Current",
+      "amount": {
+        "minor_units": 412000000,
+        "currency": "USD"
+      },
+      "invoice_count": 38
+    },
+    {
+      "label": "1-30 days",
+      "amount": {
+        "minor_units": 218000000,
+        "currency": "USD"
+      },
+      "invoice_count": 17
+    },
+    {
+      "label": "31-60 days",
+      "amount": {
+        "minor_units": 148000000,
+        "currency": "USD"
+      },
+      "invoice_count": 9
+    },
+    {
+      "label": "60+ days",
+      "amount": {
+        "minor_units": 64000000,
+        "currency": "USD"
+      },
+      "invoice_count": 4
+    }
+  ],
+  "references": [
+    "ar_ledger:aging-2026-W10"
+  ]
+}

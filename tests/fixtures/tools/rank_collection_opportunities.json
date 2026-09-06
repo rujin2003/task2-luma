@@ -1,0 +1,99 @@
+{
+  "as_of": "2026-03-02",
+  "total_open": {
+    "minor_units": 348000000,
+    "currency": "USD"
+  },
+  "total_expected": {
+    "minor_units": 165660000,
+    "currency": "USD"
+  },
+  "rows": [
+    {
+      "customer": "Contoso Ltd",
+      "document_ref": "INV-10482",
+      "amount": {
+        "minor_units": 120000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-01-20",
+      "days_past_due": 41,
+      "probability_pct": "38.0",
+      "expected_amount": {
+        "minor_units": 45600000,
+        "currency": "USD"
+      },
+      "empirical_basis": "41 days past terms, no commitment on file; this bucket settles 38% historically",
+      "reference": "ar_ledger:INV-10482#amount_due"
+    },
+    {
+      "customer": "Fabrikam Inc",
+      "document_ref": "INV-10517",
+      "amount": {
+        "minor_units": 88000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-02-13",
+      "days_past_due": 17,
+      "probability_pct": "64.0",
+      "expected_amount": {
+        "minor_units": 56320000,
+        "currency": "USD"
+      },
+      "empirical_basis": "inside the 30-day bucket, 64% collected on a call",
+      "reference": "ar_ledger:INV-10517#amount_due"
+    },
+    {
+      "customer": "Northwind Traders",
+      "document_ref": "INV-10466",
+      "amount": {
+        "minor_units": 64000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-01-09",
+      "days_past_due": 52,
+      "probability_pct": "22.0",
+      "expected_amount": {
+        "minor_units": 14080000,
+        "currency": "USD"
+      },
+      "empirical_basis": "disputed delivery; 22% settles without escalation",
+      "reference": "ar_ledger:INV-10466#amount_due"
+    },
+    {
+      "customer": "Tailspin Systems",
+      "document_ref": "INV-10530",
+      "amount": {
+        "minor_units": 41000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-02-24",
+      "days_past_due": 6,
+      "probability_pct": "81.0",
+      "expected_amount": {
+        "minor_units": 33210000,
+        "currency": "USD"
+      },
+      "empirical_basis": "current, high-frequency payer",
+      "reference": "ar_ledger:INV-10530#amount_due"
+    },
+    {
+      "customer": "Adventure Works",
+      "document_ref": "INV-10493",
+      "amount": {
+        "minor_units": 35000000,
+        "currency": "USD"
+      },
+      "due_date": "2026-02-02",
+      "days_past_due": 28,
+      "probability_pct": "47.0",
+      "expected_amount": {
+        "minor_units": 16450000,
+        "currency": "USD"
+      },
+      "empirical_basis": "partial payment plan proposed last quarter",
+      "reference": "ar_ledger:INV-10493#amount_due"
+    }
+  ],
+  "references": []
+}

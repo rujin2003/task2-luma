@@ -1,0 +1,71 @@
+[
+  {
+    "agent": "dodo_revenue",
+    "fingerprint": "1acc05469985ca0f",
+    "note": "Golden path: dodo_revenue against the seeded W10 fixtures.",
+    "output": {
+      "agent": "dodo_revenue",
+      "status": "complete",
+      "headline": "$1.11M at risk, $597.6K recoverable inside documented retry windows",
+      "detail": "Soft declines carry the recoverable amount: insufficient funds at a 14-day window is the largest single cohort. The $1.0M of hard declines is not recoverable and retrying it would buy fees, not revenue.",
+      "quantum": {
+        "minor_units": 59760000,
+        "currency": "USD"
+      },
+      "evidence": [
+        {
+          "reference": "dodo:decline-2026-W10#insufficient_funds",
+          "source": "dodo",
+          "excerpt": "412 declines, 14-day retry window"
+        },
+        {
+          "reference": "dodo:decline-2026-W10#expired_card",
+          "source": "dodo",
+          "excerpt": "168 declines, 21-day retry window"
+        },
+        {
+          "reference": "dodo:decline-2026-W10#stolen_card",
+          "source": "dodo",
+          "excerpt": "hard decline, not recoverable"
+        }
+      ],
+      "risks": [
+        "Retry timing outside the documented window converts recoverable to lost"
+      ],
+      "recommended_actions": [
+        {
+          "kind": "dodo_retry",
+          "rationale": "Insufficient-funds cohort inside its 14-day retry window",
+          "amount": {
+            "minor_units": 37820000,
+            "currency": "USD"
+          },
+          "evidence_refs": [
+            "dodo:decline-2026-W10#insufficient_funds"
+          ]
+        },
+        {
+          "kind": "dodo_dunning",
+          "rationale": "Expired cards need a credential update, not a retry",
+          "amount": {
+            "minor_units": 15840000,
+            "currency": "USD"
+          },
+          "evidence_refs": [
+            "dodo:decline-2026-W10#expired_card"
+          ]
+        }
+      ]
+    },
+    "usage": {
+      "input_tokens": 632,
+      "output_tokens": 328
+    }
+  },
+  {
+    "agent": "dodo_revenue",
+    "default": true,
+    "note": "Failure injection: the Dodo agent times out and the wave must degrade.",
+    "raises": "timeout"
+  }
+]

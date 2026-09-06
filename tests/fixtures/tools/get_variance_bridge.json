@@ -1,0 +1,79 @@
+{
+  "as_of": "2026-03-02",
+  "week_ending": "2026-02-27",
+  "total_delta": {
+    "minor_units": -187000000,
+    "currency": "USD"
+  },
+  "rows": [
+    {
+      "category": "AR collections - enterprise",
+      "plan": {
+        "minor_units": 560000000,
+        "currency": "USD"
+      },
+      "actual": {
+        "minor_units": 420000000,
+        "currency": "USD"
+      },
+      "delta": {
+        "minor_units": -140000000,
+        "currency": "USD"
+      },
+      "material": true,
+      "reference": "ar_ledger:INV-10482#amount_due"
+    },
+    {
+      "category": "AP - vendor payments",
+      "plan": {
+        "minor_units": 280000000,
+        "currency": "USD"
+      },
+      "actual": {
+        "minor_units": 310000000,
+        "currency": "USD"
+      },
+      "delta": {
+        "minor_units": -30000000,
+        "currency": "USD"
+      },
+      "material": true,
+      "reference": "ap_ledger:run-2026-W09"
+    },
+    {
+      "category": "Dodo subscription receipts",
+      "plan": {
+        "minor_units": 210000000,
+        "currency": "USD"
+      },
+      "actual": {
+        "minor_units": 190000000,
+        "currency": "USD"
+      },
+      "delta": {
+        "minor_units": -20000000,
+        "currency": "USD"
+      },
+      "material": true,
+      "reference": "dodo:decline-2026-W10#soft_rate"
+    },
+    {
+      "category": "Operating expenses",
+      "plan": {
+        "minor_units": 145000000,
+        "currency": "USD"
+      },
+      "actual": {
+        "minor_units": 142000000,
+        "currency": "USD"
+      },
+      "delta": {
+        "minor_units": 3000000,
+        "currency": "USD"
+      },
+      "material": false,
+      "reference": "gl:opex-2026-W09"
+    }
+  ],
+  "references": []
+}

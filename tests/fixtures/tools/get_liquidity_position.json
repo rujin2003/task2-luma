@@ -1,0 +1,26 @@
+{
+  "as_of": "2026-03-02",
+  "cash_today": {
+    "minor_units": 2480000000,
+    "currency": "USD"
+  },
+  "floor": {
+    "minor_units": 2000000000,
+    "currency": "USD"
+  },
+  "min_cash": {
+    "minor_units": 1840000000,
+    "currency": "USD"
+  },
+  "min_cash_week": 6,
+  "revolver_available": {
+    "minor_units": 800000000,
+    "currency": "USD"
+  },
+  "revolver_utilization_pct": "42.0",
+  "runway_weeks": 19,
+  "references": [
+    "bank:balance-2026-03-02",
+    "policy:treasury-policy-v4#min_cash"
+  ]
+}

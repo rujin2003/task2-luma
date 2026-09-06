@@ -1,0 +1,29 @@
+{
+  "as_of": "2026-03-02",
+  "covenants": [
+    {
+      "covenant_id": "dscr",
+      "label": "Debt service coverage ratio",
+      "observed_ratio": "1.42",
+      "threshold_ratio": "1.25",
+      "headroom_pct": "13.6",
+      "breached": false,
+      "tested_on": "2026-02-28",
+      "reference": "debt:covenant-dscr-2026Q1"
+    },
+    {
+      "covenant_id": "revolver-util",
+      "label": "Maximum revolver utilization",
+      "observed_ratio": "0.42",
+      "threshold_ratio": "0.65",
+      "headroom_pct": "35.4",
+      "breached": false,
+      "tested_on": "2026-02-28",
+      "reference": "debt:covenant-util-2026Q1"
+    }
+  ],
+  "references": [
+    "debt:covenant-dscr-2026Q1",
+    "debt:covenant-util-2026Q1"
+  ]
+}

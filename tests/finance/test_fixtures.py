@@ -4,19 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.contracts import (
-    AccuracyStatDTO,
-    BankRecon,
-    CashPosition,
-    CollectionOpportunity,
-    Constraint,
-    CovenantStatus,
-    DebtCapacity,
-    DeferralCandidate,
-    DodoMetrics,
-    ForecastGrid,
-    VarianceBridge,
-)
+from backend.contracts.cash import BankRecon, CashPosition
+from backend.contracts.constraint import Constraint
+from backend.contracts.covenant import CovenantStatus
+from backend.contracts.debt import DebtCapacity
+from backend.contracts.dodo import DodoMetrics
+from backend.contracts.forecast import AccuracyStatDTO, ForecastGrid, VarianceBridge
+from backend.contracts.worklist import CollectionOpportunity, DeferralCandidate
 
 
 def test_cash_position_fixture(fixture_json: Any) -> None:

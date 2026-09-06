@@ -8,6 +8,7 @@ __pycache__/
 venv/
 .env
 .env.*
+.env.local
 !.env.example
 *.egg-info/
 .eggs/
@@ -24,6 +25,8 @@ htmlcov/
 node_modules/
 frontend/.next/
 frontend/out/
+.next/
+out/
 
 # IDE / OS
 .DS_Store

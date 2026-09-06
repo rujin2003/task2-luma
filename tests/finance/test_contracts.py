@@ -2,15 +2,10 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 
-from backend.contracts import (
-    AgentFinding,
-    CashPosition,
-    Evidence,
-    ForecastGrid,
-    MoneyDTO,
-    VarianceBridge,
-    WorklistItem,
-)
+from backend.contracts.cash import CashPosition
+from backend.contracts.common import MoneyDTO
+from backend.contracts.forecast import ForecastGrid, VarianceBridge
+from backend.contracts.worklist import WorklistItem
 from backend.finance import Provenance
 
 
@@ -28,25 +23,6 @@ def _prov() -> Provenance:
 def test_money_dto_from_money() -> None:
     dto = MoneyDTO(amount=2380000000, currency="USD")
     assert dto.to_money().to_major_string() == "23800000.00"
-
-
-def test_agent_finding_schema() -> None:
-    finding = AgentFinding(
-        agent="variance",
-        status="complete",
-        finding={"delta_minor": -190000000},
-        evidence=(
-            Evidence(
-                source="ar_ledger",
-                reference="customer_A_invoice_1832",
-                provenance=_prov(),
-            ),
-        ),
-        risks=("Customer A slipped $900K to W2",),
-        recommended_actions=("Call re: overdue invoice 1832",),
-    )
-    assert finding.status == "complete"
-    assert finding.evidence[0].reference == "customer_A_invoice_1832"
 
 
 def test_cash_position_and_forecast_and_worklist_are_schema_valid() -> None:
