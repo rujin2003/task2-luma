@@ -1,0 +1,12 @@
+[
+  {
+    "facility_id": "revolver-1",
+    "limit": {"amount": 500000000, "currency": "USD"},
+    "drawn": {"amount": 100000000, "currency": "USD"},
+    "undrawn": {"amount": 400000000, "currency": "USD"},
+    "utilization_bps": 2000,
+    "all_in_draw_cost_bps": 725,
+    "max_safe_draw": {"amount": 220000000, "currency": "USD"},
+    "commitment_fee_bps": 30
+  }
+]

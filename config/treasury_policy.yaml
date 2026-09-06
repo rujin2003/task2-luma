@@ -1,0 +1,49 @@
+# Versioned NovaTech treasury policy. Engines read this (or a DB row of the
+# same shape). Never copy these numbers into code.
+version: 1
+effective_at: "2026-01-01T00:00:00Z"
+currency: USD
+
+# $15,000,000.00
+min_unrestricted_cash:
+  amount: 1500000000
+  currency: USD
+
+# $20,000,000.00
+min_30d_liquidity:
+  amount: 2000000000
+  currency: USD
+
+# 70.00%
+max_revolver_utilization_bps: 7000
+
+protected_payment_classes:
+  - payroll
+  - tax
+  - statutory
+
+materiality:
+  # lesser of $50,000 or 1.00% of monthly operating expense
+  absolute:
+    amount: 5000000
+    currency: USD
+  pct_of_monthly_opex_bps: 100
+
+doa_bands:
+  - action: collection_call
+    approver: analyst
+  - action: early_pay_discount
+    max_amount: {amount: 0, currency: USD}  # placeholder; % rule lives in Phase 10
+    approver: treasurer
+  - action: ap_deferral
+    max_amount: {amount: 25000000, currency: USD}  # $250,000
+    approver: treasurer
+  - action: revolver_draw
+    max_amount: {amount: 200000000, currency: USD}  # $2,000,000
+    approver: cfo
+  - action: payroll
+    approver: blocked
+    blocked: true
+  - action: tax
+    approver: blocked
+    blocked: true

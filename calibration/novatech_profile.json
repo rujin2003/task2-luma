@@ -1,0 +1,221 @@
+{
+  "profile": "novatech",
+  "version": 1,
+  "currency": "USD",
+  "fitted_at": "2026-09-05",
+  "_readme": [
+    "Fitted parameters only — never dataset rows. This is what DATA_SOURCES.md's",
+    "attribution section asks for: committing distributions rather than the",
+    "observations they were fitted to is smaller, licence-clean, and keeps the",
+    "seed deterministic. Every number below is an integer (minor units, basis",
+    "points, or days) because backend/seed is float-free like the rest of the",
+    "financial path.",
+    "Each block names the source it was derived from and the derivation, so a",
+    "reviewer can re-fit it rather than take it on trust."
+  ],
+  "sources": {
+    "balance_sheet_scale": {
+      "source": "SEC EDGAR XBRL frames, us-gaap concepts for a peer set of ~$400-500M revenue SaaS filers",
+      "derivation": "median cash/revenue, AR/revenue, AP/revenue and revolver utilization across the peer set, scaled to a $450M revenue entity",
+      "verified": "data.sec.gov/api/xbrl/frames — 200"
+    },
+    "collection_behaviour": {
+      "source": "IBM Finance Factoring late-payment histories; payment-date-prediction invoice set; Olist order-to-payment timestamps",
+      "derivation": "two-component payment-delay mixture fitted per customer segment on days(paid - due); collection probability fitted per aging bucket",
+      "note": "The mixture is the point. Real invoice delay is bimodal, not normal — fitting a mean puts cash in a week where none arrives."
+    },
+    "rates": {
+      "source": "US Treasury Fiscal Data average interest rates and the daily Treasury yield curve; FRED SOFR",
+      "derivation": "SOFR as the revolver base rate; credit spread from IG corporate OAS at a single-B-plus equivalent",
+      "verified": "api.fiscaldata.treasury.gov — 200; home.treasury.gov CSV — 200"
+    },
+    "covenants": {
+      "source": "SEC Ex-10 credit agreement exhibits",
+      "derivation": "modal Consolidated Leverage Ratio ceiling and Interest Coverage floor for facilities of this size, with quarterly testing on TTM adjusted EBITDA"
+    },
+    "vendor_concentration": {
+      "source": "USAspending contract values; Olist seller distribution; SEC 10-K supplier-concentration disclosures",
+      "derivation": "Pareto spend curve, roughly 80% of spend across 20% of vendors, with criticality assigned independently of spend"
+    },
+    "processor": {
+      "source": "Dodo Payments API reference — Transaction Failures and Error Codes; Payouts and Balance Ledger",
+      "derivation": "rolling success rate and the soft/hard decline split taken from the documented failure taxonomy; payout lag from the balance-ledger to payout gap"
+    },
+    "bank": {
+      "source": "Plaid sandbox transaction shapes",
+      "derivation": "pending-vs-posted ratio and value-date lag by payment method"
+    }
+  },
+
+  "scale": {
+    "annual_revenue_minor": 45000000000,
+    "monthly_operating_expense_minor": 3100000000,
+    "ttm_adjusted_ebitda_minor": 5850000000,
+    "opening_operating_cash_minor": 1241802200,
+    "opening_money_market_cash_minor": 620000000,
+    "opening_payroll_cash_minor": 180000000,
+    "opening_restricted_cash_minor": 350000000
+  },
+
+  "ar": {
+    "dso_days": 52,
+    "invoice_terms_days": 30,
+    "weekly_invoice_count": 18,
+    "customer_count": 42,
+    "_concentration_note": "Top-5 customers hold roughly 38% of AR, matching the peer-set median.",
+    "segment_weights_bps": {
+      "enterprise": 2000,
+      "mid_market": 4500,
+      "smb": 3500
+    },
+    "segment_invoice_minor": {
+      "enterprise": 42000000,
+      "mid_market": 11500000,
+      "smb": 2600000
+    },
+    "segment_terms_days": {
+      "enterprise": 45,
+      "mid_market": 30,
+      "smb": 15
+    },
+    "_lag_mixture_note": "weight_bps must sum to 10000 per segment; lag_days is days after the due date",
+    "lag_mixture": {
+      "default": [
+        {"weight_bps": 6200, "lag_days": 2},
+        {"weight_bps": 3800, "lag_days": 34}
+      ],
+      "enterprise": [
+        {"weight_bps": 5200, "lag_days": 6},
+        {"weight_bps": 4800, "lag_days": 41}
+      ],
+      "mid_market": [
+        {"weight_bps": 6600, "lag_days": 3},
+        {"weight_bps": 3400, "lag_days": 29}
+      ],
+      "smb": [
+        {"weight_bps": 7400, "lag_days": 1},
+        {"weight_bps": 2600, "lag_days": 22}
+      ]
+    },
+    "collection_probability_bps": {
+      "current": 9880,
+      "1-30": 9720,
+      "31-60": 9310,
+      "61-90": 8450,
+      "90+": 5900
+    },
+    "dispute_haircut_bps": 4000,
+    "dispute_rate_bps": 240
+  },
+
+  "ap": {
+    "dpo_days": 38,
+    "vendor_count": 34,
+    "weekly_vendor_invoice_count": 22,
+    "_pareto_note": "spend_weight_bps are relative weights across the vendor list, steeply decaying",
+    "top_vendor_spend_share_bps": 8000,
+    "top_vendor_count": 7,
+    "invoice_terms_days": 30,
+    "typical_invoice_minor": 9400000,
+    "early_pay_discount_bps": 200,
+    "early_pay_days": 10,
+    "critical_vendor_count": 4,
+    "single_source_vendor_count": 1,
+    "single_source_replacement_lead_time_days": 42
+  },
+
+  "payroll": {
+    "frequency": "semi_monthly",
+    "salaried_gross_per_period_minor": 210000000,
+    "hourly_gross_per_period_minor": 38000000,
+    "employer_tax_bps": 765,
+    "employee_withholding_bps": 1800,
+    "benefits_per_period_minor": 24000000,
+    "deposit_schedule": "semi_weekly"
+  },
+
+  "fixed_costs": {
+    "rent_per_month_minor": 30000000,
+    "rent_day_of_month": 1,
+    "estimated_tax_per_quarter_minor": 150000000,
+    "sales_tax_per_month_minor": 8500000,
+    "sales_tax_day_of_month": 20,
+    "insurance_annual_minor": 42000000,
+    "insurance_month": 11,
+    "insurance_day": 2,
+    "capex_per_quarter_minor": 75000000
+  },
+
+  "debt": {
+    "revolver_limit_minor": 5000000000,
+    "revolver_drawn_minor": 1000000000,
+    "revolver_max_utilization_bps": 8000,
+    "revolver_commitment_fee_bps": 35,
+    "term_loan_minor": 3000000000,
+    "term_loan_amortisation_per_quarter_minor": 75000000,
+    "base_rate_bps": 433,
+    "revolver_spread_bps": 225,
+    "term_spread_bps": 300,
+    "service_frequency": "quarterly",
+    "covenants": {
+      "leverage_ceiling_bps": 35000,
+      "interest_coverage_floor_bps": 30000,
+      "min_liquidity_minor": 2500000000
+    }
+  },
+
+  "processor": {
+    "subscription_count": 60,
+    "monthly_subscription_minor": 1400000,
+    "annual_subscription_minor": 15000000,
+    "annual_share_bps": 2500,
+    "baseline_success_rate_bps": 9410,
+    "_decline_note": "Soft declines are retry-recoverable per Dodo's documented taxonomy; hard declines are not. Never invent a recovery percentage.",
+    "soft_decline_share_bps": 6800,
+    "soft_decline_recovery_bps": 7200,
+    "payout_lag_business_days": 2,
+    "dispute_rate_bps": 45,
+    "refund_rate_bps": 180
+  },
+
+  "bank": {
+    "settlement_lag_business_days": 1,
+    "pending_share_bps": 900,
+    "outstanding_cheque_count": 7,
+    "outstanding_cheque_minor": 18430000,
+    "deposit_in_transit_count": 3,
+    "deposit_in_transit_minor": 27190000,
+    "unrecorded_fee_minor": 214000,
+    "aged_exception_count": 2,
+    "aged_exception_days": 94
+  },
+
+  "history": {
+    "forecast_history_weeks": 26,
+    "horizon_weeks": 13,
+    "accuracy_window_weeks": 26,
+    "_error_note": "Per-category forecast noise, applied to historical versions so backtesting has something to measure. Basis points of the cell amount, widening with horizon.",
+    "category_error_bps": {
+      "receipts_trade_ar": 310,
+      "receipts_subscription": 240,
+      "receipts_other": 900,
+      "payroll_salaried": 0,
+      "payroll_hourly": 60,
+      "payroll_taxes_benefits": 30,
+      "ap_trade": 520,
+      "rent_leases": 0,
+      "tax_income_estimated": 0,
+      "tax_sales_vat": 110,
+      "debt_interest": 0,
+      "debt_principal": 0,
+      "capex": 640,
+      "insurance_software": 20
+    },
+    "horizon_error_multiplier_bps": {
+      "1": 10000,
+      "4": 25000,
+      "8": 46000,
+      "13": 71000
+    }
+  }
+}

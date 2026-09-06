@@ -1,0 +1,20 @@
+{
+  "current_cash": {"amount": 2380000000, "currency": "USD"},
+  "restricted_cash": {"amount": 0, "currency": "USD"},
+  "unrestricted_cash": {"amount": 2380000000, "currency": "USD"},
+  "pending_in": {"amount": 27190000, "currency": "USD"},
+  "pending_out": {"amount": 18430000, "currency": "USD"},
+  "undrawn_revolver": {"amount": 500000000, "currency": "USD"},
+  "available_liquidity": {"amount": 2880000000, "currency": "USD"},
+  "as_of": "2026-08-30T00:00:00Z",
+  "provenance": [
+    {
+      "source_system": "bank",
+      "source_table": "bank_accounts",
+      "source_pk": "op-4471",
+      "field": "balance_minor",
+      "as_of": "2026-08-30T00:00:00Z",
+      "retrieved_at": "2026-09-01T08:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "category": "payroll_salaried",
+    "horizon_weeks": 1,
+    "mape_bps": 0,
+    "n": 26,
+    "window_weeks": 26
+  },
+  {
+    "category": "customer_receipts_trade",
+    "horizon_weeks": 1,
+    "mape_bps": 310,
+    "n": 26,
+    "window_weeks": 26
+  },
+  {
+    "category": "customer_receipts_trade",
+    "horizon_weeks": 4,
+    "mape_bps": 780,
+    "n": 26,
+    "window_weeks": 26
+  }
+]

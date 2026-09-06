@@ -1,0 +1,25 @@
+{
+  "kind": "forecast_vs_actual",
+  "week_ending": "2026-08-30",
+  "rows": [
+    {
+      "category": "customer_receipts_trade",
+      "forecast": {"amount": 420000000, "currency": "USD"},
+      "actual": {"amount": 310000000, "currency": "USD"},
+      "prior_forecast": null,
+      "variance": {"amount": -110000000, "currency": "USD"},
+      "material": true,
+      "explanation": "Customer A inv 1832 $900K slipped to W2"
+    },
+    {
+      "category": "payroll_salaried",
+      "forecast": {"amount": -210000000, "currency": "USD"},
+      "actual": {"amount": -210000000, "currency": "USD"},
+      "prior_forecast": null,
+      "variance": {"amount": 0, "currency": "USD"},
+      "material": false,
+      "explanation": null
+    }
+  ],
+  "closing_variance": {"amount": -190000000, "currency": "USD"}
+}

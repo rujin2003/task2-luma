@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "warroom"
+version = "0.1.0"
+description = "WAR ROOM — weekly 13-week cash forecast and treasury escalation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "sqlmodel>=0.0.22",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14.0",
+    "psycopg[binary]>=3.2.0",
+    "pyyaml>=6.0.2",
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "hypothesis>=6.115.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+    "types-pyyaml>=6.0.12",
+    "httpx>=0.27.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["backend*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+filterwarnings = ["error"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["backend", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+# E501: line length is enforced by the formatter, not the linter.
+# RUF002/RUF003: docstrings and comments quote the design docs verbatim, which
+# use typographic characters (×, −, ·). Rewriting them to ASCII would make the
+# code and the specification it cites disagree on sight.
+ignore = ["E501", "RUF002", "RUF003"]
+
+[tool.ruff.lint.isort]
+# Stated explicitly so import ordering does not depend on whether the package
+# happens to be installed editable in the developer's virtualenv.
+known-first-party = ["backend", "scripts", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*" = ["I001"]
+
+[tool.mypy]
+python_version = "3.12"
+pretty = true
+show_error_codes = true
+packages = ["backend.finance"]
+strict = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["yaml"]
+ignore_missing_imports = true

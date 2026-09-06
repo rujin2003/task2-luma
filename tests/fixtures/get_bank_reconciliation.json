@@ -1,0 +1,25 @@
+{
+  "account_ref": "op-4471",
+  "as_of": "2026-08-30",
+  "balance_per_bank": {"amount": 1241802200, "currency": "USD"},
+  "outstanding_cheques": {"amount": -18430000, "currency": "USD"},
+  "deposits_in_transit": {"amount": 27190000, "currency": "USD"},
+  "unrecorded_bank_fees": {"amount": -214000, "currency": "USD"},
+  "adjusted_bank": {"amount": 1250348200, "currency": "USD"},
+  "balance_per_gl": {"amount": 1250692200, "currency": "USD"},
+  "book_adjustments": {"amount": -344000, "currency": "USD"},
+  "adjusted_book": {"amount": 1250348200, "currency": "USD"},
+  "difference": {"amount": 0, "currency": "USD"},
+  "aged_unreconciled": [
+    {
+      "reference": "CHK-8831",
+      "description": "outstanding cheque > 30 days",
+      "amount": {"amount": -1250000, "currency": "USD"},
+      "age_days": 34,
+      "kind": "outstanding_cheque"
+    }
+  ],
+  "prepared_by": "system",
+  "reviewed_by": null,
+  "approved_by": null
+}

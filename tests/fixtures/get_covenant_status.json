@@ -1,0 +1,26 @@
+[
+  {
+    "name": "minimum_unrestricted_cash",
+    "definition": "unrestricted cash >= policy.min_unrestricted_cash, tested weekly",
+    "test_date": "2026-09-30",
+    "current_value_bps": null,
+    "threshold_bps": null,
+    "headroom": {"amount": 880000000, "currency": "USD"},
+    "headroom_bps": null,
+    "passed": true,
+    "days_to_test": 29,
+    "currency": "USD"
+  },
+  {
+    "name": "revolver_utilization",
+    "definition": "drawn / limit <= 70%, tested on facility anniversary",
+    "test_date": "2026-09-30",
+    "current_value_bps": 2000,
+    "threshold_bps": 7000,
+    "headroom": {"amount": 2500000000, "currency": "USD"},
+    "headroom_bps": 5000,
+    "passed": true,
+    "days_to_test": 29,
+    "currency": "USD"
+  }
+]

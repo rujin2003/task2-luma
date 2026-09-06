@@ -1,0 +1,28 @@
+{
+  "version_id": "fv-0001",
+  "as_of": "2026-09-01T00:00:00Z",
+  "opening_cash": {"amount": 1960000000, "currency": "USD"},
+  "weeks": ["2026-09-07"],
+  "lines": [
+    {
+      "category": "customer_receipts_trade",
+      "week_start": "2026-09-01",
+      "week_end": "2026-09-07",
+      "amount": {"amount": 420000000, "currency": "USD"},
+      "source": "ar_aging",
+      "assumption": "aging bucket x historical collection curve",
+      "method": "direct",
+      "as_of": "2026-09-01T00:00:00Z",
+      "provenance": {
+        "source_system": "erp",
+        "source_table": "invoices",
+        "source_pk": "INV-1832",
+        "field": "amount_cents",
+        "as_of": "2026-08-30T00:00:00Z",
+        "retrieved_at": "2026-09-01T08:00:00Z"
+      }
+    }
+  ],
+  "closing_cash_by_week": [{"amount": 2150000000, "currency": "USD"}],
+  "available_liquidity_by_week": [{"amount": 2650000000, "currency": "USD"}]
+}

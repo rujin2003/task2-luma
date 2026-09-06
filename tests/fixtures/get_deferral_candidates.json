@@ -1,0 +1,26 @@
+[
+  {
+    "vendor_invoice_ref": "VI-0044",
+    "vendor": "Vendor cluster 44-51",
+    "amount": {"amount": 72000000, "currency": "USD"},
+    "proposed_deferral_days": 14,
+    "early_pay_discount_cost": {"amount": 0, "currency": "USD"},
+    "criticality": "standard",
+    "blocked": false,
+    "block_reason": null,
+    "single_source": false,
+    "replacement_lead_time_days": 14
+  },
+  {
+    "vendor_invoice_ref": "VI-00Q",
+    "vendor": "Vendor Q",
+    "amount": {"amount": 110000000, "currency": "USD"},
+    "proposed_deferral_days": 14,
+    "early_pay_discount_cost": {"amount": 0, "currency": "USD"},
+    "criticality": "sole_source",
+    "blocked": true,
+    "block_reason": "sole-source, 6-week replacement lead time",
+    "single_source": true,
+    "replacement_lead_time_days": 42
+  }
+]

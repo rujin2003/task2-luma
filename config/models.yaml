@@ -1,0 +1,29 @@
+# Provider-agnostic model routing. Swapping a model is a YAML change.
+# See docs/LLM_STRATEGY.md. Person 2 owns runtime wiring; this file is the contract.
+default:
+  provider: gemini
+  model: gemini-3.7-flash
+
+roles:
+  commander:
+    effort: high
+  conflict_resolution:
+    effort: high
+  covenant_explainer:
+    max_output_tokens: 400
+  cartographer:
+    max_output_tokens: 300
+  forecast:
+    max_output_tokens: 500
+  variance:
+    max_output_tokens: 500
+  ar_collections:
+    max_output_tokens: 500
+  ap_optimization:
+    max_output_tokens: 500
+  supplier_risk:
+    max_output_tokens: 500
+  dodo_revenue:
+    max_output_tokens: 500
+  stress_test:
+    max_output_tokens: 400

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "payroll_delay",
+    "passed": false,
+    "actual": 14,
+    "limit": 0,
+    "margin": -14,
+    "reason": "payroll is a protected payment class"
+  },
+  {
+    "name": "min_unrestricted_cash",
+    "passed": true,
+    "actual": {"amount": 2380000000, "currency": "USD"},
+    "limit": {"amount": 1500000000, "currency": "USD"},
+    "margin": {"amount": 880000000, "currency": "USD"},
+    "reason": "unrestricted cash is above policy floor"
+  }
+]

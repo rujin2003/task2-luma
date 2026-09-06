@@ -1,0 +1,22 @@
+[
+  {
+    "invoice_ref": "INV-1832",
+    "customer": "Customer A",
+    "amount": {"amount": 90000000, "currency": "USD"},
+    "days_past_due": 12,
+    "collection_probability_bps": 9100,
+    "expected_accelerated": {"amount": 81900000, "currency": "USD"},
+    "action": "Call re: overdue invoice 1832",
+    "due": "2026-09-08"
+  },
+  {
+    "invoice_ref": "INV-1901",
+    "customer": "Customer B",
+    "amount": {"amount": 64000000, "currency": "USD"},
+    "days_past_due": 4,
+    "collection_probability_bps": 8700,
+    "expected_accelerated": {"amount": 55680000, "currency": "USD"},
+    "action": "Offer 2/10 net 30 on invoices 1901, 1904",
+    "due": "2026-09-09"
+  }
+]
