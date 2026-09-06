@@ -37,6 +37,7 @@ TENANT_TABLES: tuple[str, ...] = (
     "approval_routes",
     "approvals",
     "assumptions",
+    "audit_entries",
     "bank_accounts",
     "bank_reconciliation_items",
     "bank_reconciliations",

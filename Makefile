@@ -1,4 +1,4 @@
-.PHONY: test lint typecheck check-float ci seed seed-trivial migrate migration install
+.PHONY: test lint typecheck check-float ci seed seed-trivial migrate migration install demo
 
 PYTHON ?= python3
 SEED ?= 42
@@ -19,7 +19,7 @@ fmt:
 	$(PYTHON) -m ruff format backend tests scripts
 
 typecheck:
-	$(PYTHON) -m mypy backend/finance backend/models
+	$(PYTHON) -m mypy
 
 check-float:
 	$(PYTHON) scripts/check_no_float.py
@@ -40,3 +40,9 @@ migration:
 
 seed-trivial: migrate
 	DATABASE_URL="$(DB)" $(PYTHON) -m backend.seed.trivial
+
+# Reset → seed → shock pack → deterministic narrative (Person 1 Phase 11).
+demo:
+	DATABASE_URL="sqlite:///warroom-demo.db" SEED=$(SEED) \
+		$(PYTHON) scripts/demo.py --seed $(SEED) --db sqlite:///warroom-demo.db \
+		--golden tests/fixtures/demo/golden_seed_$(SEED).json
