@@ -1,0 +1,16 @@
+{
+  "breaches_floor": true,
+  "cash_today_minor": -3357289070,
+  "company": "NovaTech Inc.",
+  "company_id": "3e14f7e1a8125e7e9b808b4833e3543d",
+  "covenant_breaches": [
+    "Minimum Liquidity"
+  ],
+  "floor_minor": 1500000000,
+  "forecast_versions": 26,
+  "forecast_weeks": 13,
+  "min_cash_minor": -3950126735,
+  "min_cash_week": 12,
+  "seed": 42,
+  "shock_applied": true
+}

@@ -41,6 +41,14 @@ def test_maker_checker_requires_three_people() -> None:
         assert_maker_checker("maker", "reviewer", "MAKER")
 
 
+def test_preparer_cannot_approve_own_worklist() -> None:
+    from backend.finance.controls import assert_worklist_approver
+
+    assert_worklist_approver("analyst", "treasurer")
+    with pytest.raises(SegregationOfDutiesError):
+        assert_worklist_approver("analyst", "ANALYST")
+
+
 def test_revolver_draw_hard_fails_without_approved_record() -> None:
     engine = create_engine("sqlite://")
     SQLModel.metadata.create_all(engine)

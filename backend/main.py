@@ -1,12 +1,25 @@
-"""Minimal FastAPI entrypoint. Route modules are Person 2's surface."""
+"""Minimal FastAPI entrypoint.
+
+Person 2 owns the broader API surface. Person 1 mounts only the Dodo webhook
+receiver here so signature verification and idempotent replay stay behind the
+integration boundary.
+"""
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import os
+
+from fastapi import FastAPI, Header, HTTPException, Request
 
 from backend.finance.policy import TreasuryPolicy
+from backend.integrations.dodo.webhooks import (
+    WebhookStore,
+    WebhookVerificationError,
+    receive_webhook,
+)
 
 app = FastAPI(title="WAR ROOM", version="0.1.0")
+_webhook_store = WebhookStore()
 
 
 @app.get("/health")
@@ -18,3 +31,35 @@ def health() -> dict[str, str]:
 def current_policy() -> dict[str, object]:
     policy = TreasuryPolicy.load()
     return policy.model_dump(mode="json")
+
+
+@app.post("/webhooks/dodo")
+async def dodo_webhook(
+    request: Request,
+    webhook_id: str | None = Header(default=None, alias="webhook-id"),
+    webhook_timestamp: str | None = Header(default=None, alias="webhook-timestamp"),
+    webhook_signature: str | None = Header(default=None, alias="webhook-signature"),
+) -> dict[str, object]:
+    secret = os.environ.get("DODO_PAYMENTS_WEBHOOK_KEY", "")
+    if not secret:
+        raise HTTPException(status_code=503, detail="webhook secret not configured")
+    body = await request.body()
+    try:
+        event = receive_webhook(
+            secret=secret,
+            headers={
+                "webhook-id": webhook_id or "",
+                "webhook-timestamp": webhook_timestamp or "",
+                "webhook-signature": webhook_signature or "",
+            },
+            body=body,
+            store=_webhook_store,
+        )
+    except WebhookVerificationError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    return {
+        "received": True,
+        "duplicate": event.duplicate,
+        "event_type": event.event_type,
+        "webhook_id": event.webhook_id,
+    }

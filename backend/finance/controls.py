@@ -57,6 +57,16 @@ def assert_maker_checker(preparer: str, reviewer: str, approver: str) -> None:
         raise SegregationOfDutiesError("preparer, reviewer and approver must be different people")
 
 
+def assert_worklist_approver(prepared_by: str, approver: str) -> None:
+    """The analyst who prepared a worklist cannot approve it."""
+    if not prepared_by.strip() or not approver.strip():
+        raise SegregationOfDutiesError("prepared_by and approver are required")
+    if prepared_by.strip().casefold() == approver.strip().casefold():
+        raise SegregationOfDutiesError(
+            f"{approver} prepared this worklist and cannot also approve it"
+        )
+
+
 def require_approval_before_draw(
     session: Session,
     *,
@@ -86,6 +96,7 @@ def require_approval_before_draw(
 __all__ = [
     "ApprovalRequiredError",
     "assert_maker_checker",
+    "assert_worklist_approver",
     "require_approval_before_draw",
     "route_approval",
 ]

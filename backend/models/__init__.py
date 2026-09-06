@@ -8,6 +8,7 @@ from sqlmodel import SQLModel
 
 from backend.models.ap import PaymentRun, Vendor, VendorInvoice
 from backend.models.ar import Customer, Invoice, Payment, PaymentApplication
+from backend.models.audit import AuditEntry
 from backend.models.banking import (
     BankAccount,
     BankReconciliation,
@@ -60,6 +61,7 @@ __all__ = [
     "Approval",
     "ApprovalRoute",
     "Assumption",
+    "AuditEntry",
     "BankAccount",
     "BankHoliday",
     "BankReconciliation",
